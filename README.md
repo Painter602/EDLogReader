@@ -18,7 +18,9 @@ In principal, this could be adapted to other JSON based log files.
 
 # Nice to have:
 The script can run from the command line or from Python's IDLE.
-I have made an executable from my copy using a Python compiler.
+
+I built an executable from my copy using a Python compiler.
+
 There are several Python compilers out there.  I used py2exe, but suggest you research available options, and select the one best suited to you.
 
 # Why not distribute an executable version?
