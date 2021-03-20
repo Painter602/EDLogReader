@@ -11,7 +11,9 @@ In principal, this could be adapted to other JSON based log files.
 3) Virpil's VPC_LED_Control.exe program.  This is bundled with their VPC Software Setup files, download from: https://support.virpil.com/en/support/solutions/47000010107
 
 4) A Python runtime environment, or Python compiler.  The Python environment can be downloaded from https://www.python.org/downloads/
+
    The script was written for Python 3.9.
+
    It will not work with versions 2.x or earlier.
 
 # Nice to have:
