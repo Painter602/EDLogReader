@@ -1,6 +1,6 @@
 # Vpl-LED-controller
-Script to change the LEDs on Virpil conrolers in responce to events in Elite Dangerous.
-In.principal, this could be adaptabled to other JSON based log files.
+Script to change the LEDs on Virpil controllers in response to events in Elite Dangerous.
+In principal, this could be adapted to other JSON based log files.
 
 # Required:
 1) Elite Dangerous game
@@ -16,7 +16,7 @@ In.principal, this could be adaptabled to other JSON based log files.
 # Nice to have:
 A Python compiler.  There are several out there.  I used py2exe, but suggest you research available options, and select the one best suited to your purpose.
 
-# Why not distribut an executable version?
+# Why not distribute an executable version?
 Simple answer, I do not have a Microsoft compiler with the necessary licences to do so.
 
 # After uploading
@@ -24,7 +24,7 @@ There are three configuration files:
    conf.json
    Left VPC WarBrd.conf.json
    RIGHT VPC Stick WarBRD.conf.json
-If you have just one joystick, rename or delete 'conf.json', and replace it with the appropriate jeft or right conf file.
+If you have just one joystick, rename or delete 'conf.json', and replace it with the appropriate left or right conf file.
 This will save you having to delete un-needed joystick references in the file.
 
 Edit your conf.json file:
