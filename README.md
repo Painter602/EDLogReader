@@ -27,6 +27,7 @@ There are three configuration files:
 1) conf.json
 2) Left VPC WarBrd.conf.json
 3) RIGHT VPC Stick WarBRD.conf.json
+
 If you have just one joystick, rename or delete 'conf.json', and replace it with the appropriate left or right conf file.
 This will save you having to delete un-needed joystick references in the file.
 
