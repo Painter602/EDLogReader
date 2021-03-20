@@ -38,3 +38,7 @@ Make sure the device names and id correspond to your devices, check with your VP
 2) The script checks that the device can be found. If not, stop the script, enable the device, and restart the script.
 
 3) If Windows start stacking up on screen, stop the script, then close the windows.  Double check the name and id of your device(s) in configuration.
+
+# How does this relate to Joystick Gremlin or other helper programes?
+I run this script in parallel with Joystick Gremlin (JG, link: https://whitemagic.github.io/JoystickGremlin/ ).
+JG is not required to run this script.
