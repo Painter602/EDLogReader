@@ -1,5 +1,5 @@
-# Vpl-LED-controller
-Script to change the LEDs on Virpil controllers in response to events in Elite Dangerous.
+# EDLogReader
+Script to read Elite Dangerous Logs (journals) and to change the LEDs on Virpil controllers in response to events in Elite Dangerous (game).
 In principal, this could be adapted to other JSON based log files.
 
 # Required:
