@@ -1,0 +1,169 @@
+{"Config": {"language": "en", "pathToLEDControl": "Path/to/VPC_LED_Control.exe", "fPath":"%HOMEPATH%/Saved Games/Frontier Developments/Elite Dangerous/", "sleepTime": 5, "timeOut": 60, "timedeltaMs": 500, "resetTime": 10, "devices": {"LEFT VPC Stick WarBRD": {"id": "3344 80CC"}, "RIGHT VPC Stick WarBRD": {"id": "3344 40CC"}}}}
+{"Comment": "Config" }
+{"Comment": "language           reserved for internationalisation" }
+{"Comment": "pathToLEDControl   path to VPC_LED_Control.exe (include the program name - VPC_LED_Control.exe)" }
+{"Comment": "fPath              path to your Elite Dangerous journal files" }
+{"Comment": "sleepTime, timeOut, timedeltaMs and resetTime" }
+{"Comment": "                   timing values" }
+{"Comment": "devices            a list of VPC devices together with their id (the id from VPC Setup tool)" }
+{"Comment": "                   Note: this is tested with Left and Right Alpha sticks, throttles" }
+{"Comment": "                         and control panels will have different ids" }
+{"Comment": "" }
+{"Comment": "" }
+{"Event": "Default", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 1, "Green": 0, "Blue": 0, "cmd": 1}, "RIGHT VPC Stick WarBRD": {"Red": 0, "Green": 1, "Blue": 1, "cmd": 1}}
+{"Comment": "The Default event is used to return decives to their normal state" }
+{"Comment": "" }
+{"Comment": "" }
+{"Comment": "Event is an event label from the ED flight log"}
+{"Comment": "Interest is an integer, setting the level of responce: 0 - ignore, non-zero - set colour, influences colour range"}
+{"Comment": "remaining field should have the device label (as defined in config) together with either 'random' for a random colour, or a field giving predefined colour values (range zero to 3) and a command code"}
+{"Comment": "'random' will be a random colour chosen at the start of the program"}
+{"Comment": "The colour tuple should be in the form {\"Red\": r, \"Green\": g, \"Blue\": b,  \"cmd\": c}, where r, g, b and c are integers."}
+{"Comment": "If any colour value (Red, Green or Blue) is ommited, it will be set to zero"}
+{"Comment": "An omitted command (cmd, c) will be treated as 1 (0 is no action, 1 works with the Alpha Joystick)" }
+{"Comment": "The range of options for throttles and control panels has to exceed 40" }
+{"Comment": "Note: Events with interest Zero could be deleted, but are present here for completeness" }
+{"Comment": "" }
+{"Comment": "" }
+{"Comment": "     --- End comments ---    " }
+{"Event": "AfmuRepairs", "Interest": 2, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "ApproachBody", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "ApproachSettlement", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "Bounty", "Interest": 0}
+{"Event": "BuyAmmo", "Interest": 0}
+{"Event": "BuyDrones", "Interest": 0}
+{"Event": "BuyExplorationData", "Interest": 0}
+{"Event": "Cargo", "Interest": 0}
+{"Event": "CargoDepot", "Interest": 0}
+{"Event": "CockpitBreached", "Interest": 3, "LEFT VPC Stick WarBRD": {"Red": 3, "Green": 0, "Blue": 0, "cmd": 1}, "RIGHT VPC Stick WarBRD": "random"}
+{"Event": "CollectCargo", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "Commander", "Interest": 0}
+{"Event": "CommitCrime", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "CommunityGoal", "Interest": 0}
+{"Event": "CommunityGoalJoin", "Interest": 0}
+{"Event": "CommunityGoalReward", "Interest": 0}
+{"Event": "CrimeVictim", "Interest": 0}
+{"Event": "DatalinkScan", "Interest": 0}
+{"Event": "DatalinkVoucher", "Interest": 0}
+{"Event": "DataScanned", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "Died", "Interest": 0, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "Docked", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 0, "Green": 1, "Blue": 2, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 1, "Green": 1, "Blue": 2, "cmd": 1}}
+{"Event": "DockingCancelled", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "DockingDenied", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 2, "Green": 0, "Blue": 0, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 2, "Green": 0, "Blue": 0, "cmd": 1}}
+{"Event": "DockingGranted", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 1, "Green": 3, "Blue": 1, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 1, "Green": 3, "Blue": 1, "cmd": 1}}
+{"Event": "DockingRequested", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 1, "Green": 1, "Blue": 3, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 1, "Green": 1, "Blue": 3, "cmd": 1}}
+{"Event": "DockSRV", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "EjectCargo", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "EngineerCraft", "Interest": 0}
+{"Event": "EngineerProgress", "Interest": 0}
+{"Event": "EscapeInterdiction", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "FactionKillBond", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "FetchRemoteModule", "Interest": 0}
+{"Event": "Fileheader", "Interest": 0}
+{"Event": "Friends", "Interest": 0}
+{"Event": "FSDJump", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 3, "Green": 1, "Blue": 1, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 1, "Green": 3, "Blue": 1, "cmd": 1}}
+{"Event": "FSDTarget", "Interest": 0}
+{"Event": "FSSAllBodiesFound", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 3, "Green": 3, "Blue": 3, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 3, "Green": 3, "Blue": 3, "cmd": 1}}
+{"Event": "FSSDiscoveryScan", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 1, "Green": 0, "Blue": 3, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 1, "Green": 0, "Blue": 3, "cmd": 1}}
+{"Event": "FSSSignalDiscovered", "Interest": 0}
+{"Event": "FuelScoop", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 2, "Green": 2, "Blue": 0, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 2, "Green": 2, "Blue": 0, "cmd": 1}}
+{"Event": "HeatDamage", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 3, "Green": 1, "Blue": 0, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 3, "Green": 1, "Blue": 0, "cmd": 1}}
+{"Event": "HeatWarning", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 2, "Green": 1, "Blue": 1, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 2, "Green": 1, "Blue": 1, "cmd": 1}}
+{"Event": "HullDamage", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 3, "Green": 0, "Blue": 0, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 3, "Green": 0, "Blue": 0, "cmd": 1}}
+{"Event": "Interdicted", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 3, "Green": 1, "Blue": 1, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 3, "Green": 1, "Blue": 1, "cmd": 1}}
+{"Event": "Interdiction", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 2, "Green": 1, "Blue": 1, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 2, "Green": 1, "Blue": 1, "cmd": 1}}
+{"Event": "JetConeBoost", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 0, "Green": 0, "Blue": 3, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 0, "Green": 0, "Blue": 3, "cmd": 1}}
+{"Event": "LaunchDrone", "Interest": 0}
+{"Event": "LaunchSRV", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "LeaveBody", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "Liftoff", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 1, "Green": 3, "Blue": 0, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 1, "Green": 3, "Blue": 0, "cmd": 1}}
+{"Event": "LoadGame", "Interest": 0}
+{"Event": "Loadout", "Interest": 0}
+{"Event": "Location", "Interest": 0}
+{"Event": "Market", "Interest": 0}
+{"Event": "MarketBuy", "Interest": 0}
+{"Event": "MarketSell", "Interest": 0}
+{"Event": "MaterialCollected", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 2, "Green": 0, "Blue": 0, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 1, "Green": 2, "Blue": 0, "cmd": 1}}
+{"Event": "MaterialDiscovered", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 0, "Green": 3, "Blue": 0, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 0, "Green": 0, "Blue": 0, "cmd": 1}}
+{"Event": "Materials", "Interest": 0}
+{"Event": "MaterialTrade", "Interest": 0}
+{"Event": "MissionAbandoned", "Interest": 0}
+{"Event": "MissionAccepted", "Interest": 0}
+{"Event": "MissionCompleted", "Interest": 0}
+{"Event": "MissionFailed", "Interest": 0}
+{"Event": "MissionRedirected", "Interest": 0}
+{"Event": "Missions", "Interest": 0}
+{"Event": "ModuleBuy", "Interest": 0}
+{"Event": "ModuleInfo", "Interest": 0}
+{"Event": "ModuleRetrieve", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "ModuleSell", "Interest": 0}
+{"Event": "ModuleSellRemote", "Interest": 0}
+{"Event": "ModuleStore", "Interest": 0}
+{"Event": "ModuleSwap", "Interest": 0}
+{"Event": "MultiSellExplorationData", "Interest": 0}
+{"Event": "Music", "Interest": 0}
+{"Event": "NavBeaconScan", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "NavRoute", "Interest": 0}
+{"Event": "Outfitting", "Interest": 0}
+{"Event": "PayBounties", "Interest": 0}
+{"Event": "PayFines", "Interest": 0}
+{"Event": "Powerplay", "Interest": 0}
+{"Event": "PowerplayCollect", "Interest": 0}
+{"Event": "PowerplayDefect", "Interest": 0}
+{"Event": "PowerplayDeliver", "Interest": 0}
+{"Event": "PowerplayFastTrack", "Interest": 0}
+{"Event": "PowerplayJoin", "Interest": 0}
+{"Event": "PowerplayLeave", "Interest": 0}
+{"Event": "PowerplaySalary", "Interest": 0}
+{"Event": "PowerplayVote", "Interest": 0}
+{"Event": "Progress", "Interest": 0}
+{"Event": "Rank", "Interest": 0}
+{"Event": "RebootRepair", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "ReceiveText", "Interest": 0}
+{"Event": "RedeemVoucher", "Interest": 0}
+{"Event": "RefuelAll", "Interest": 2, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "RefuelPartial", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "Repair", "Interest": 0}
+{"Event": "RepairAll", "Interest": 0}
+{"Event": "RepairDrone", "Interest": 0}
+{"Event": "Reputation", "Interest": 0}
+{"Event": "ReservoirReplenished", "Interest": 0}
+{"Event": "RestockVehicle", "Interest": 0}
+{"Event": "Resurrect", "Interest": 0}
+{"Event": "SAAScanComplete", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "SAASignalsFound", "Interest": 0}
+{"Event": "Scan", "Interest": 0}
+{"Event": "Scanned", "Interest": 0}
+{"Event": "SearchAndRescue", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "SellDrones", "Interest": 0}
+{"Event": "SellExplorationData", "Interest": 0}
+{"Event": "SendText", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "SetUserShipName", "Interest": 0}
+{"Event": "SharedBookmarkToSquadron", "Interest": 0}
+{"Event": "ShipTargeted", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 3, "Green": 1, "Blue": 1, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 3, "Green": 1, "Blue": 2, "cmd": 1}}
+{"Event": "Shipyard", "Interest": 0}
+{"Event": "ShipyardBuy", "Interest": 0}
+{"Event": "ShipyardNew", "Interest": 0}
+{"Event": "ShipyardSell", "Interest": 0}
+{"Event": "ShipyardSwap", "Interest": 0}
+{"Event": "ShipyardTransfer", "Interest": 0}
+{"Event": "Shutdown", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "SquadronStartup", "Interest": 0}
+{"Event": "SRVDestroyed", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "StartJump", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 2, "Green": 0, "Blue": 3, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 2, "Green": 0, "Blue": 3, "cmd": 1}}
+{"Event": "Statistics", "Interest": 0}
+{"Event": "StoredModules", "Interest": 0}
+{"Event": "StoredShips", "Interest": 0}
+{"Event": "SupercruiseEntry", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "SupercruiseExit", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 2, "Green": 0, "Blue": 3, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 2, "Green": 0, "Blue": 3, "cmd": 1}}
+{"Event": "Synthesis", "Interest": 0}
+{"Event": "SystemsShutdown", "Interest": 0}
+{"Event": "Touchdown", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
+{"Event": "UnderAttack", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 3, "Green": 1, "Blue": 1, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 3, "Green": 1, "Blue": 1, "cmd": 1}}
+{"Event": "Undocked", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 3, "Green": 0, "Blue": 2, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 3, "Green": 0, "Blue": 2, "cmd": 1}}
+{"Event": "USSDrop", "Interest": 0}
+{"Event": "VehicleSwitch", "Interest": 0}
+{"Event": "WingAdd", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 1, "Green": 3, "Blue": 1, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 1, "Green": 3, "Blue": 1, "cmd": 1}}
+{"Event": "WingInvite", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 1, "Green": 3, "Blue": 1, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 1, "Green": 3, "Blue": 1, "cmd": 1}}
+{"Event": "WingJoin", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 1, "Green": 3, "Blue": 1, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 1, "Green": 3, "Blue": 1, "cmd": 1}}
+{"Event": "WingLeave", "Interest": 0}
