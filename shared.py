@@ -1,3 +1,7 @@
+"""
+Functions to be shared between EDLogReader and a proposed Configuration set-up script
+"""
+
 bDoneStart = False
 config = []
 commands = {}
