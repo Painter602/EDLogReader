@@ -53,4 +53,4 @@ I run this script in parallel with Joystick Gremlin (JG, link: https://whitemagi
 JG is not required to run this script.
 
 # Contact
-Either raise an issue here, or message me (Painter) on Virpil's forum
+Either raise an issue here ( https://github.com/Painter602/EDLogReader/issues ), or message me (Painter) on Virpil's forum
