@@ -12,6 +12,7 @@
 {"Comment": "" }
 {"Event": "Default", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 1, "Green": 0, "Blue": 0, "cmd": 1}, "RIGHT VPC Stick WarBRD": {"Red": 0, "Green": 1, "Blue": 1, "cmd": 1}}
 {"Comment": "The Default event is used to return decives to their normal state" }
+{"Comment": "todo, try using cmd: 0 instead of cmd: 1 to reset to default colours (should be device independent)" }
 {"Comment": "" }
 {"Comment": "" }
 {"Comment": "Event is an event label from the ED flight log"}
