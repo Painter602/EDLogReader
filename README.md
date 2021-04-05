@@ -3,6 +3,16 @@ Script to read Elite Dangerous Logs (journals) and to change the LEDs on Virpil 
 
 In principal, this could be adapted to other JSON based log files.
 
+# Change Log
+	5 Apr 2021
+		Added licence information to this file, and to start of shared.py and EdLogReader.py
+		
+		Updated EdLogReader.py to set several buttons on the same device simultaneously in response to an in game event.
+		Changed Configuration file structure to accomodate the multiple-buttons (for the changes, see comments in configuration file).
+		Added/changed command line parameters
+		Changed the function and variable names to be more readable (code fixes).
+		Various minor bug fixes.
+
 # Required:
 1) Elite Dangerous game
 
@@ -40,6 +50,12 @@ Set the path to your VPC_LED_Control.exe file - this will vary from system to sy
 
 Make sure the device names and id correspond to your devices, check with your VPC Configuration Tool.
 
+# Run time / Command line parameters
+  /h or help   - show this help
+  /d or device - open a window and test devices before reading the game log
+  /t or test   - read an existing log file from the front, and show device LEDs\nbased on that file's data
+  Note, a lot of test information is printed out to your command windowe or the\nIDLE test window (if relevant)
+
 # Trouble shooting
 1) The VPC_LED_Control.exe should be the same version as the VPC Configuration Tool used to configure your device.
 
@@ -54,3 +70,13 @@ JG is not required to run this script.
 
 # Contact
 Either raise an issue here ( https://github.com/Painter602/EDLogReader/issues ), or message me (Painter) on Virpil's forum
+
+# Licnce
+ GPL-2.0 License, part Unlicense (unlicense.org)
+
+# Acknowledgemnts
+Elite Dangerous is a trade mark of Frontier Developments plc, 26 Science Park, Milton Road, Cambridge, CB4 0FP, England, UK
+Virpil is a trade mark of  TERRAZYT PLUS LTD, Gorkogo St., 91-1, Grodno, 230005, Belarus 
+
+# Thank-you
+Thank-you to Fixitman for finding the commands for the CM3 throttle and for testing

@@ -1,0 +1,33 @@
+{
+	"code": "es",
+	"language": "español",
+	"Blue": "Azul",
+	"Comment": "Comentario",
+	"Config": "Configuración",
+	"Event": "Evento",
+	"Green": "Verde",
+	"Interest": "El evento es de interés",
+	"Red": "Rojo",
+	"save": "Salvar", 
+	"cancel": "Cancelar",
+	"reset": "Reiniciar",
+	"exit": "Salida",
+	"default": "Predeterminado",
+	"devices": "dispositivos",
+	"fPath": "Ruta al archivo de registro",
+	"id": "id",
+	"name": "Nombre",
+	"cmd": "Mando",
+	"language": "Idioma",
+	"pathToLEDControl": "Ruta al programa de control de LED",
+	"resetTime": "Restablecer después de (tiempo, s)",
+	"sleepTime": "Dormir entre eventos (tiempo, s)",
+	"timeOut": "",
+	"timedeltaMs": "(tiempo, ms)",
+	"commands": [
+		["LED desactivado"],
+		["[{d}][ALPHA] VPC Constellation ALPHA Grip {e}", 1, 4],
+		["[{d}] A bordo #{e}", 1, 20],
+		["[{d}] Esclavo #{e}", 1, 20]
+		]		
+}
