@@ -55,8 +55,8 @@ Make sure the device names and id correspond to your devices, check with your VP
 	
 	/d or device - open a window and test devices before reading the game log
 	
-	/t or test   - read an existing log file from the front, and show device LEDs\nbased on that file's data
-	Note, a lot of test information is printed out to your command windowe or the\nIDLE test window (if relevant)
+	/t or test   - read an existing log file from the front, and show device LEDs based on that file's data
+	Note, a lot of test information is printed out to your command windowe or the IDLE test window (if relevant)
 
 ## Trouble shooting
 1) The VPC_LED_Control.exe should be the same version as the VPC Configuration Tool used to configure your device.
