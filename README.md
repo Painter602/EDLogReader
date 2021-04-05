@@ -78,6 +78,7 @@ Either raise an issue here ( https://github.com/Painter602/EDLogReader/issues ),
 
 ## Acknowledgemnts
 Elite Dangerous is a trade mark of Frontier Developments plc, 26 Science Park, Milton Road, Cambridge, CB4 0FP, England, UK
+
 Virpil is a trade mark of  TERRAZYT PLUS LTD, Gorkogo St., 91-1, Grodno, 230005, Belarus 
 
 ## Thank-you
