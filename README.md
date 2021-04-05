@@ -73,7 +73,7 @@ JG is not required to run this script.
 ## Contact
 Either raise an issue here ( https://github.com/Painter602/EDLogReader/issues ), or message me (Painter) on Virpil's forum
 
-## Licnce
+## Licence
  GPL-2.0 License, part Unlicense (unlicense.org)
 
 ## Acknowledgemnts
