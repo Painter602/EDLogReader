@@ -24,8 +24,10 @@ Licence:
 
 """
 
+from datetime import datetime
 import glob
 import json
+import os
 import sys
 
 def in_args( *args ):
@@ -50,6 +52,7 @@ DEFAULT_COMMAND = 1                      # default command
 LOG_FILE = "Journal.*.log"
 LANG_FILE = "lang.$.json"
 LANG_FILE_NAME = LANG_FILE.replace("$", "*")
+PROG_NAME = sys.argv[0].split('\\')[-1].split('.')[0]
 SHOW_HELP =  'help' in (x.lower() for x in sys.argv) or '/h' in (x.lower() for x in sys.argv)
 
 config = []
@@ -74,6 +77,14 @@ def expand_commands(jsn_txt):
         for cmd in commands:
             print(cmd)
     return commands
+
+def error( module, txt ):
+    error_file = open( f'{PROG_NAME}.log', 'a' )
+    error_file.write( f'{datetime.utcnow()} UTC\t\tModule: {module}\t\t{txt}\n' )
+    error_file.flush()
+    os.fsync(error_file.fileno())
+    error_file.close()
+    
 
 def load_languages():
     '''

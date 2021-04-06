@@ -35,6 +35,7 @@ import sys
 import time
 from threading import Thread
 import tkinter as tk
+from tkinter import messagebox
 
 import list_joysticks
 import shared as edlr
@@ -45,6 +46,31 @@ DEFAULT_COMMAND = edlr.DEFAULT_COMMAND            # default command
 DEVICE_TEST = edlr.DEVICE_TEST
 PROG_NAME = sys.argv[0].split('\\')[-1].split('.')[0]
 SHOW_HELP = edlr.SHOW_HELP
+
+HELP = ( '\n\n' + PROG_NAME + ' Help\n'
+         '==============\n'
+         'You may run this script with NO parameters, and it should read your\r'
+         'Elite Dangerous log files, and respond by changing the LED colours\r'
+         'displayed on your Virpil Devices.\n\n'
+         'Note: your configuration file may need modification before that works.\n\n\n'
+         'Optional command line parameters\n'
+         '--------------------------------\n'
+         '/h or help\t- show this help\n'
+         '/d or device(s)\t- open a window and test devices before\n'
+         '\t\t  reading the game log\n'
+         '/t or test\t\t- read an existing log file from the front,\n'
+         '\t\t  and show device LEDs based on that file\'s\n'
+         '\t\t  data\n\n'
+         'Note: In test mode, a lot of test information is printed out to your command\r'
+         'window or the IDLE test window (if relevant).'
+         '\n\n'
+         )
+# HELP: replace carriage return (\r) with new line (\n)
+#       when displaying HELP on text (i.e. IDLE) windows
+#
+# HELP: replace carriage return (\r) with space when displaying HELP in a messagebox
+#
+# Essentially, line wrapping occures in different places between the two environments
 
 instructions = edlr.instructions    # dictionary of available commands (filled at run time)
 
@@ -99,6 +125,11 @@ def do_reset():
     manage( '{ "event":"Default" }' )
     return True
 
+def help_mssg():
+    message = HELP.replace('\r', ' ')
+    
+    messagebox.showinfo(title=f'{PROG_NAME} Help', message=message)
+
 def reset_height( ctrl, height_max, range_max=20 ):
     '''
     Set the height of the text box
@@ -107,6 +138,25 @@ def reset_height( ctrl, height_max, range_max=20 ):
         height_max = range_max
     if height_max > ctrl[ 'height' ]:
         ctrl[ 'height' ] = height_max
+        ctrl.pack()
+        master = ctrl
+        while master.master:
+            master = master.master
+            try:
+                master.pack()
+            except AttributeError:
+                pass
+
+def reset_width( ctrl, width_min ):
+    '''
+    Set the width of the text box
+    '''
+
+    if width_min > 100:
+        width_min = 100
+
+    if width_min >= ctrl[ 'width' ]:
+        ctrl[ 'width' ] = width_min + 1
         ctrl.pack()
         master = ctrl
         while master.master:
@@ -150,6 +200,7 @@ class Window:
         frm = tk.Frame(master=self.window, bd=5)
         button_txt = "Quit"   #   "Close Window"
         if len( missing ):
+            self._help_button(frm)
             button_txt = "Exit"
             button = tk.Button(frm, text=f' {button_txt} ', command=self.close_down)
             button.pack()
@@ -159,6 +210,7 @@ class Window:
                                text=f' {button_skip} ',
                                command=partial( set_skip_test, True) )
             button.pack(side=tk.LEFT)
+            self._help_button(frm)
             button = tk.Button(frm, text=f' {button_txt} ', command=stop_running)
             button.pack()
         frm.pack()
@@ -171,30 +223,43 @@ class Window:
                            "Devices are Missing:",
                            "====================",
                            ""]
-            mssg_bottom = ["",
+            mssg_bottom = ["", "",
                            "This may be caused by:",
                            "",
-                           "A config file may have changed,",
+                           "The config file may have changed,",
                            "   or become corrupted", "",
                            "Or a device may be unplugged -",
                            "    check your devices",
                            "",
-                           "This program will end when","   the window closes"]
+                           "This program will end", "when the window closes",
+                           ""]
             len_inst = len( missing ) + len( mssg_top ) + len( mssg_bottom )
             ctr = 0
             for mssg in mssg_top:
                 ctr += 1
+                # log_error(self, mssg, ctr, len_inst, False )
                 self.update( mssg, ctr, len_inst, False )
             for missed in missing:
                 ctr += 1
+                # log_error(self,  f'   {missed}', ctr, len_inst, False )
                 self.update( f'   {missed}', ctr, len_inst, False )
             for mssg in mssg_bottom:
                 ctr += 1
+                # log_error( self, mssg, ctr, len_inst, False)
                 self.update( mssg, ctr, len_inst, False )
+            
+            # log_error(self, "", 0, 0)
             self.tbx.config( bg="#ff0" )
             self.tbx.master.config( bg="#000" )
             self.window.mainloop()
             sys.exit( 0 )
+
+    def _help_button(self, frm):
+        button_help = "Help"
+        button = tk.Button(frm,
+                           text=f' {button_help} ',
+                           command=help_mssg )
+        button.pack(side=tk.LEFT)
 
     def on_closing( self ):
         '''
@@ -230,6 +295,7 @@ class Window:
         if count_max:
             txt_table = self.tbx.get("1.0", "end")
             reset_height( self.tbx, count_max )
+            reset_width( self.tbx, len( txt ) )
             if len( txt_table ) > 1:
                 self.tbx.insert( tk.END, '\n' )
                 self.lines += 1
@@ -268,6 +334,7 @@ def do_start():
                     missing[ ins ] += 1
                 else:
                     missing[ ins ] = 1
+                    edlr.error( 'do_start', f'Device missing: {ins}' )
 
     window = None
     window = Window( missing )
@@ -478,25 +545,8 @@ def show_help():
     Display a help message, then exit the script
     '''
     if SHOW_HELP:
-        my_help = ( '\n\n' + PROG_NAME + '\n'
-                 'Help has yet to be written\n'
-                 '===========================\n'
-                 'In the mean time, you can run this script with '
-                 'NO parameters, and it should read your Elite Dangerous '
-                 'log files, and respond by changing the LED colours '
-                 'displayed on your Virpil Devices\n\n'
-                 'Note: your configuration file may need modification before that works\n\n\n'
-                 'Optional command line parameters\n'
-                 '--------------------------------\n'
-                 '/h or help      - show this help\n'
-                 '/d or device(s) - open a window and test devices before reading the game log\n'
-                 '/t or test      - read an existing log file from the front, and show device\n'
-                 '                  LEDs based on that file\'s data\n\n'
-                 'Note, a lot of test information is printed out to your command window or\n'
-                 'the IDLE test window (if relevant)'
-                 '\n\n'
-            )
-        print(my_help)
+        message = HELP.replace('\r', '\n')
+        print(message)
         sys.exit(0)
 
 def update( window, txt, counter=0, count_max=0 ):
