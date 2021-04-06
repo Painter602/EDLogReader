@@ -1,10 +1,11 @@
 """
 A module to track events in Elite Dangerous, and set the
 LEDs on Virpil Controls in responce to those events
-"""
 
-"""
-    VPC-LED_Controller - Script to change the LEDs on Virpil conrolers in responce to events in Elite Dangerous (game)
+Licence:
+=======
+    VPC-LED_Controller - Script to change the LEDs on
+    Virpil conrollers in responce to events in Elite Dangerous (game)
     Copyright (C) 2021, Painter602
 
     This program is free software; you can redistribute it and/or modify
@@ -20,7 +21,7 @@ LEDs on Virpil Controls in responce to those events
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-    
+
 """
 
 from datetime import datetime, timedelta
@@ -51,6 +52,7 @@ def static():
     '''
     placeholder to store shared/static variables (globals)
     '''
+static.b_done_start = False
 static.joysticks = {}
 static.running=False
 static.skip_test = False
@@ -97,6 +99,35 @@ def do_reset():
     manage( '{ "event":"Default" }' )
     return True
 
+def reset_height( ctrl, height_max, range_max=20 ):
+    '''
+    Set the height of the text box
+    '''
+    if height_max > range_max:
+        height_max = range_max
+    if height_max > ctrl[ 'height' ]:
+        ctrl[ 'height' ] = height_max
+        ctrl.pack()
+        master = ctrl
+        while master.master:
+            master = master.master
+            try:
+                master.pack()
+            except AttributeError:
+                pass
+
+def set_skip_test( set_skip=True ):
+    '''
+    Skip (or stop) testing commands
+    '''
+    static.skip_test = set_skip
+
+def stop_running():
+    '''
+    Set a flag to stop running this script
+    '''
+    static.running = False
+
 class Window:
     '''
     A window to show events and warnings, primarily in the early stages of the script
@@ -120,29 +151,48 @@ class Window:
         button_txt = "Quit"   #   "Close Window"
         if len( missing ):
             button_txt = "Exit"
+            button = tk.Button(frm, text=f' {button_txt} ', command=self.close_down)
+            button.pack()
         else:
             button_skip = "Skip Device Test"
             button = tk.Button(frm,
                                text=f' {button_skip} ',
-                               command=partial( self._set_skip_test, True) )
+                               command=partial( set_skip_test, True) )
             button.pack(side=tk.LEFT)
-        button = tk.Button(frm, text=f' {button_txt} ', command=self.stop_running)
-        button.pack()
+            button = tk.Button(frm, text=f' {button_txt} ', command=stop_running)
+            button.pack()
         frm.pack()
         self._do_missing( missing )
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def _do_missing(self, missing ):
         if len( missing ):
-            self.update( "Devices are Missing:" )
-            height = 4
+            mssg_top    = [" ",
+                           "Devices are Missing:",
+                           "====================",
+                           ""]
+            mssg_bottom = ["",
+                           "This may be caused by:",
+                           "",
+                           "A config file may have changed,",
+                           "   or become corrupted", "",
+                           "Or a device may be unplugged -",
+                           "    check your devices",
+                           "",
+                           "This program will end when","   the window closes"]
+            len_inst = len( missing ) + len( mssg_top ) + len( mssg_bottom )
+            ctr = 0
+            for mssg in mssg_top:
+                ctr += 1
+                self.update( mssg, ctr, len_inst, False )
             for missed in missing:
-                height += 1
-                self.update( missed )
-            self.tbx.config(height=height)
+                ctr += 1
+                self.update( f'   {missed}', ctr, len_inst, False )
+            for mssg in mssg_bottom:
+                ctr += 1
+                self.update( mssg, ctr, len_inst, False )
             self.tbx.config( bg="#ff0" )
             self.tbx.master.config( bg="#000" )
-            self.update( "\nThis program will end when the\nwindow closes" )
             self.window.mainloop()
             sys.exit( 0 )
 
@@ -157,7 +207,7 @@ class Window:
         Prepare this window to be closed, destroy the window
         '''
         if not static.skip_test:
-            self._set_skip_test(True)
+            set_skip_test(True)
         self.closing = True
         # self.update("Closing Window" )
         # time.sleep(2)
@@ -166,38 +216,37 @@ class Window:
         except tk.TclError:     # likely this has been destroyed already
             pass
 
-    def _set_skip_test( self, set_skip=True ):
-        static.skip_test = set_skip
-        if static.skip_test:
-            if not self.closing:
-                # update( self, "Test skipped" )
-                # time.sleep( 2 )
-                pass
-
-    def stop_running( self ):
+    def close_down( self ):
         '''
-        Set a flag to stop running this script
+        Prepare to close this window and exit the program
         '''
-        static.running = False
+        stop_running()
+        self.close()
 
-    def update( self, txt, counter=0, count_max=0):
+    def update( self, txt, counter=0, count_max=0, show_command_counter=True):
         '''
         Update the window, by showing new text
         '''
         if count_max:
             txt_table = self.tbx.get("1.0", "end")
+            reset_height( self.tbx, count_max )
             if len( txt_table ) > 1:
                 self.tbx.insert( tk.END, '\n' )
                 self.lines += 1
-            if self.lines > 4:
+            if self.lines > self.tbx[ 'height' ]:
                 self.tbx.delete( "1.0", "2.0" )
             self.tbx.insert( tk.END, txt )
-        self.lbl.destroy()
-        if count_max:
-            self.lbl = tk.Label( self.frm, text=f"Command {counter} of {count_max}")
-        else:
-            self.lbl = tk.Label( self.frm, text=txt)
-        self.lbl.pack(side=tk.LEFT)
+
+        try:
+            self.lbl.destroy()
+        except tk.TclError:
+            pass
+        if show_command_counter:
+            if count_max:
+                self.lbl = tk.Label( self.frm, text=f"Command {counter} of {count_max}")
+            else:
+                self.lbl = tk.Label( self.frm, text=txt)
+            self.lbl.pack(side=tk.LEFT)
         self.frm.update()
         self.window.update()
 
@@ -205,7 +254,7 @@ def do_start():
     '''
     Handle start up routines
     '''
-    if edlr.b_done_start:
+    if static.b_done_start:
         return
     static.running = True
 
@@ -250,7 +299,7 @@ def do_start():
     window.close()
 
     do_reset()
-    edlr.b_done_start = True
+    static.b_done_start = True
 
 def find_joysticks():
     '''
@@ -425,8 +474,11 @@ def set_path( path_key ):
         config.config[ new_key ] = path
 
 def show_help():
+    '''
+    Display a help message, then exit the script
+    '''
     if SHOW_HELP:
-        help = ( '\n\n' + PROG_NAME + '\n'
+        my_help = ( '\n\n' + PROG_NAME + '\n'
                  'Help has yet to be written\n'
                  '===========================\n'
                  'In the mean time, you can run this script with '
@@ -436,13 +488,15 @@ def show_help():
                  'Note: your configuration file may need modification before that works\n\n\n'
                  'Optional command line parameters\n'
                  '--------------------------------\n'
-                 '/h or help   - show this help\n'
-                 '/d or device - open a window and test devices before reading the game log\n'
-                 '/t or test   - read an existing log file from the front, and show device LEDs\nbased on that file\'s data\n\n'
-                 'Note, a lot of test information is printed out to your command windowe or the\nIDLE test window (if relevant)'
+                 '/h or help      - show this help\n'
+                 '/d or device(s) - open a window and test devices before reading the game log\n'
+                 '/t or test      - read an existing log file from the front, and show device\n'
+                 '                  LEDs based on that file\'s data\n\n'
+                 'Note, a lot of test information is printed out to your command window or\n'
+                 'the IDLE test window (if relevant)'
                  '\n\n'
             )
-        print(help)
+        print(my_help)
         sys.exit(0)
 
 def update( window, txt, counter=0, count_max=0 ):

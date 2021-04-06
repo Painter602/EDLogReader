@@ -1,9 +1,11 @@
 """
 Functions to be shared between EDLogReader and a proposed Configuration set-up script
-"""
 
-"""
-    VPC-LED_Controller - Script to change the LEDs on Virpil conrolers in responce to events in Elite Dangerous (game)
+
+Licence:
+=======
+    VPC-LED_Controller - Script to change the LEDs on
+    Virpil conrollers in responce to events in Elite Dangerous (game)
     Copyright (C) 2021, Painter602
 
     This program is free software; you can redistribute it and/or modify
@@ -19,14 +21,29 @@ Functions to be shared between EDLogReader and a proposed Configuration set-up s
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-    
+
 """
+
 import glob
 import json
 import sys
 
-BTEST = 'test' in (x.lower() for x in sys.argv) or '/t' in (x.lower() for x in sys.argv)
-DEVICE_TEST = 'devices' in (x.lower() for x in sys.argv) or '/d' in (x.lower() for x in sys.argv)
+def in_args( *args ):
+    '''
+    Check whether flags are given in the run-time/run-line arguments
+    '''
+    flags = []
+    for arg in args:
+        flags.append( arg )
+    ret = False
+    for flag in flags:
+        ret = ret or flag in (x.lower() for x in sys.argv)
+        ret = ret or f'{flag}s' in (x.lower() for x in sys.argv)
+    return ret
+
+BTEST = in_args( '/t', 'test')
+DEVICE_TEST = in_args( '/d', 'device')
+
 COLOURS = ["00", "40", "80", "FF"]   # colours available on Virpil devices
 CONFIG_FILE = "conf.json"
 DEFAULT_COMMAND = 1                      # default command
@@ -35,8 +52,6 @@ LANG_FILE = "lang.$.json"
 LANG_FILE_NAME = LANG_FILE.replace("$", "*")
 SHOW_HELP =  'help' in (x.lower() for x in sys.argv) or '/h' in (x.lower() for x in sys.argv)
 
-' shared/global values '
-b_done_start = False
 config = []
 instructions = {}
 PLACES = 2
@@ -46,7 +61,6 @@ def expand_commands(jsn_txt):
     expand commands
     '''
     commands= []
-    cd = 0
     for line in jsn_txt[ 'commands' ]:
         if len( line ) == 1:
             commands.append( line[ 0 ] )
@@ -56,7 +70,6 @@ def expand_commands(jsn_txt):
                 d_str = f"{('0' * PLACES)}{d_num}"[-PLACES:]
                 e_str = f"{('0' * PLACES)}{e_num}"[-PLACES:]
                 commands.append( line[ 0 ].replace( '{d}', d_str).replace( '{e}', e_str) )
-                cd += 1
     if BTEST:
         for cmd in commands:
             print(cmd)
