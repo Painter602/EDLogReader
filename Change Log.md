@@ -11,6 +11,13 @@ The Log Reader window is quiet at these times.
 
 Created this Change log
 
+## Historical changes (pre-dating this log)
+
+### 6 Apr 2021
+Fixed an issue where EdLogReader checks the attached devices match the config file.
+The script should now show better feedback if a device in config is not attached to the PC.
+
+
 #### 5 Apr 2021
 Added licence information to this file, and to start of shared.py and EdLogReader.py
 
