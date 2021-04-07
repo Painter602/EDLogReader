@@ -1,4 +1,4 @@
-{"Config": {"language": "en", "pathToLEDControl": "Path/to/VPC_LED_Control.exe", "fPath":"%HOMEPATH%/Saved Games/Frontier Developments/Elite Dangerous/", "sleepTime": 5, "timeOut": 60, "timedeltaMs": 500, "resetTime": 10, "devices": {"LEFT VPC Stick WarBRD": {"id": "3344 80CC"}, "RIGHT VPC Stick WarBRD": {"id": "3344 40CC"}}}}
+{"Config": {"language": "en", "pathToLEDControl": "Path/to/VPC_LED_Control.exe", "fPath":"%HOMEPATH%/Saved Games/Frontier Developments/Elite Dangerous/", "sleepTime": 5, "timeOut": 60, "timedeltaMs": 500, "resetTime": 10, "devices": {"LEFT VPC Stick WarBRD": {"id": "3344 80CC"}, "RIGHT VPC Stick WarBRD": {"id": "3344 40CC", "cmdCount": 6}}}}
 {"Comment": "Config" }
 {"Comment": "language           reserved for internationalisation" }
 {"Comment": "pathToLEDControl   path to VPC_LED_Control.exe (include the program name - VPC_LED_Control.exe)" }
@@ -25,6 +25,29 @@
 {"Comment": "The range of options for throttles and control panels has to exceed 40" }
 {"Comment": "Note: Events with interest Zero could be deleted, but are present here for completeness" }
 {"Comment": "" }
+{"Comment": "Changes 5 Apr 2021 - subject to test" }
+{"Comment": "==================" }
+{"Comment": "If a device supports several colours simultaneously, then you may send a command for each colour" }
+{"Comment": {"Event": "SomeEvent", "Interest": 1, "CM3 Throttle":[{"Red": 1, "Green": 2, "Blue": 3, "cmd": 5}, {"Red": 2, "Green": 3, "Blue": 0, "cmd": 6}], "OtherDevice": "..."}		}
+{"Comment": "" }
+{"Comment": "If a device supports several colours simultaneously, then you may send the same colour to several buttons" }
+{"Comment": {"Event": "SomeEvent", "Interest": 1, "CM3 Throttle":{"Red": 1, "Green": 2, "Blue": 3, "cmd": [5, 6]}, "OtherDevice": "..."}		}
+{"Comment": "" }
+{"Comment": "The following should have the same effect:" }
+{"Comment": {"Event": "SomeEvent", "Interest": 1, "CM3 Throttle":[{"Red": 1, "Green": 2, "Blue": 3, "cmd": 5}, {"Red": 1, "Green": 2, "Blue": 3, "cmd": 6}], "OtherDevice": "..."}		}
+{"Comment": "" }
+{"Comment": "You may combine these" }
+{"Comment": {"Event": "SomeEvent", "Interest": 1, "CM3 Throttle":[{"Red": 1, "Green": 2, "Blue": 3, "cmd": [5, 6]}, {"Red": 2, "Green": 3, "Blue": 0, "cmd": [7, 8]}], "OtherDevice": "..."}		}
+{"Comment": "" }
+{"Comment": "" }
+{"Comment": "Commands" }
+{"Comment": "========" }
+{"Comment": "cmd  0    Set colours on Virpil devices back to default" }
+{"Comment": "cmd  1    Set colours on Virpil Alpha sticks" }
+{"Comment": "" }
+{"Comment": "cmd 5-10  Set colours for Buttons B1-B6 on Virpil CM3 Throttle" }
+{"Comment": "" }
+{"Comment": "Other commands are reserved or not known" }
 {"Comment": "" }
 {"Comment": "     --- End comments ---    " }
 {"Event": "AfmuRepairs", "Interest": 2, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
@@ -48,10 +71,10 @@
 {"Event": "DatalinkVoucher", "Interest": 0}
 {"Event": "DataScanned", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
 {"Event": "Died", "Interest": 0, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
-{"Event": "Docked", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 0, "Green": 1, "Blue": 2, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 1, "Green": 1, "Blue": 2, "cmd": 1}}
+{"Event": "Docked", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 0, "Green": 1, "Blue": 2, "cmd": 1}, "RIGHT VPC Stick WarBRD":[{"Red": 1, "Green": 1, "Blue": 2, "cmd": 1}]}
 {"Event": "DockingCancelled", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
-{"Event": "DockingDenied", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 2, "Green": 0, "Blue": 0, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 2, "Green": 0, "Blue": 0, "cmd": 1}}
-{"Event": "DockingGranted", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 1, "Green": 3, "Blue": 1, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 1, "Green": 3, "Blue": 1, "cmd": 1}}
+{"Event": "DockingDenied", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 2, "Green": 0, "Blue": 0, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 2, "Green": 0, "Blue": 0, "cmd": [1, 2]}}
+{"Event": "DockingGranted", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 1, "Green": 3, "Blue": 1, "cmd": 1}, "RIGHT VPC Stick WarBRD":[{"Red": 1, "Green": 3, "Blue": 1, "cmd": [1,2,3]},{"Red": 1, "Green": 3, "Blue": 1, "cmd": [4,5,6]}]}
 {"Event": "DockingRequested", "Interest": 1, "LEFT VPC Stick WarBRD": {"Red": 1, "Green": 1, "Blue": 3, "cmd": 1}, "RIGHT VPC Stick WarBRD":{"Red": 1, "Green": 1, "Blue": 3, "cmd": 1}}
 {"Event": "DockSRV", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}
 {"Event": "EjectCargo", "Interest": 1, "LEFT VPC Stick WarBRD": "random", "RIGHT VPC Stick WarBRD":"random"}

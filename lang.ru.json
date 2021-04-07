@@ -1,0 +1,33 @@
+{
+	"code": "ру",
+	"language": "Русский",
+	"Blue": "Синий",
+	"Comment": "Комментарий",
+	"Config": "Конфигурация",
+	"Event": "Событие",
+	"Green": "Зеленый",
+	"Interest": "Событие представляет интерес",
+	"Red": "Красный",		
+	"save": "Сохранить", 
+	"cancel": "Отменить",
+	"reset": "Сброс",
+	"exit": "Выход",
+	"default": "По умолчанию",
+	"devices": "устройства",
+	"fPath": "Путь к файлу журнала",
+	"id": "id",
+	"name": "имя",
+	"cmd": "Команда",
+	"language": "Язык",
+	"pathToLEDControl": "Путь к программе управления светодиодами",
+	"resetTime": "Сбросить через (время, с)",
+	"sleepTime": "Сон между событиями (время, с)",
+	"timeOut": "",
+	"timedeltaMs": "(время, мс)",
+	"commands": [
+		["[00] Set Default"],
+		["[{d}] Set Add-boards LED {e}", 1, 4],
+		["[{d}] Set On-board LED {e}", 5, 24],
+		["[{d}] Set Slave-board LED {e}", 25, 44]
+		]
+}

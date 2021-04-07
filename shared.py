@@ -1,55 +1,121 @@
 """
 Functions to be shared between EDLogReader and a proposed Configuration set-up script
+
+
+Licence:
+=======
+    VPC-LED_Controller - Script to change the LEDs on
+    Virpil conrollers in responce to events in Elite Dangerous (game)
+    Copyright (C) 2021, Painter602
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 """
 
-bDoneStart = False
+import glob
+import json
+import sys
+
+def in_args( *args ):
+    '''
+    Check whether flags are given in the run-time/run-line arguments
+    '''
+    flags = []
+    for arg in args:
+        flags.append( arg )
+    ret = False
+    for flag in flags:
+        ret = ret or flag in (x.lower() for x in sys.argv)
+        ret = ret or f'{flag}s' in (x.lower() for x in sys.argv)
+    return ret
+
+BTEST = in_args( '/t', '-t', 't', 'test')
+DEVICE_TEST = in_args( '/d', '-d', 'd', 'device')
+
+COLOURS = ["00", "40", "80", "FF"]   # colours available on Virpil devices
+CONFIG_FILE = "conf.json"
+DEFAULT_COMMAND = 1                      # default command
+LOG_FILE = "Journal.*.log"
+LANG_FILE = "lang.$.json"
+LANG_FILE_NAME = LANG_FILE.replace("$", "*")
+RTEST = in_args( '/r', '-r', 'r', 'running-test', '/t', '-t', 't', 'test')
+SHOW_HELP =  'help' in (x.lower() for x in sys.argv) or '/h' in (x.lower() for x in sys.argv)
+
 config = []
-commands = {}
-cv = ["00", "40", "80", "FF"]   # colours available on Virpil devices
-cfFile = "conf.json"
-dCmd = "1"                      # default command
-fName = "Journal.*.log"
-langFile = "lang.$.json"
-langFileName = langFile.replace("$", "*")
+instructions = {}
+PLACES = 2
 
-def expandCommands(j, debug=False):
-    # expand commands
-    c = []
-    for a in j[ 'commands' ]:
-        if len( a ) == 1:
-            c.append( a[ 0 ] )
+def expand_commands(jsn_txt):
+    '''
+    expand commands
+    '''
+    commands= []
+    for line in jsn_txt[ 'commands' ]:
+        if len( line ) == 1:
+            commands.append( line[ 0 ] )
         else:
-            p = len( str( a[2 ] ) )
-            for d in range( a[ 1], a[ 2 ]+1 ):
-                c.append( a[ 0 ].replace( '{d}', (('0' * p) + str(d) )[-p:] ))
-    if debug:
-        print( c )
-    return c
+            e_num = 1
+            for d_num in range( line[ 1 ], line[ 2 ]+1 ):
+                d_str = f"{('0' * PLACES)}{d_num}"[-PLACES:]
+                e_str = f"{('0' * PLACES)}{e_num}"[-PLACES:]
+                commands.append( line[ 0 ].replace( '{d}', d_str).replace( '{e}', e_str) )
+    if BTEST:
+        for cmd in commands:
+            print(cmd)
+    return commands
 
-def loadLanguages(debug=False):
-    import glob
-    import json
+def load_languages():
+    '''
+    read the language files
+    '''
 
     languages = {}
 
-    langFileList = sorted( glob.glob(f"{langFileName}") )
-    
-    for fl in langFileList:
+    lang_file_list = sorted( glob.glob(f"{LANG_FILE_NAME}") )
+
+    for file_name in lang_file_list:
+        if BTEST:
+            print( file_name )
         try:
-            f = open(fl,"r", encoding="utf-8")
+            lang_file = open(file_name,"r", encoding="utf-8")
         except:
+            # failed to open language file
             continue
-        txt = f.read().replace('\n', '')
-        f.close()
-        j = json.loads( txt )
-        j[ 'commands' ] = expandCommands( j )
-        languages[ j[ 'code' ]] = j
-        if debug:
-            print(languages[ j[ 'code' ]])
+        txt = lang_file.read().replace('\n', '')
+        lang_file.close()
+        jsn_txt = json.loads( txt )
+        jsn_txt[ 'commands' ] = expand_commands( jsn_txt )
+        languages[ jsn_txt[ 'code' ]] = jsn_txt
+        if BTEST:
+            print(languages[ jsn_txt[ 'code' ]])
     return languages
 
 def main():
-    print( f'{loadLanguages()}\n' )
+    '''
+    run module as a stand-alone program
+    '''
+    languages = load_languages()
+    for language in languages:
+        print( f'{language}:' )
+        for xlate in languages[ language ]:
+            if xlate == 'commands':
+                print()
+                for cmd in languages[ language ][ xlate ]:
+                    print( f'\t{ cmd } ' )
+            else:
+                print( f'\t{xlate}: { languages[ language ][ xlate ] }' )
 
 if __name__ == '__main__':
     main()
