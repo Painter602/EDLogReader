@@ -1,6 +1,6 @@
 # ED Log Reader
 ## Change log
-#### 7 Apr 2021
+###  7 Apr 2021
 Change to the way the script works.
 It now holds a window open while checking the ED log files.
 
@@ -13,12 +13,12 @@ Created this Change log
 
 ## Historical changes (pre-dating this log)
 
-### 6 Apr 2021
+###  6 Apr 2021
 Fixed an issue where EdLogReader checks the attached devices match the config file.
 The script should now show better feedback if a device in config is not attached to the PC.
 
 
-#### 5 Apr 2021
+###  5 Apr 2021
 Added licence information to this file, and to start of shared.py and EdLogReader.py
 
 Updated EdLogReader.py to set several buttons on the same device simultaneously in response to in game events.
