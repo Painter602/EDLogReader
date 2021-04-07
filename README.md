@@ -3,20 +3,6 @@ Script to read Elite Dangerous Logs (journals) and to change the LEDs on Virpil 
 
 In principal, this could be adapted to other JSON based log files.
 
-## Change Log
-### 5 Apr 2021
-Added licence information to this file, and to start of shared.py and EdLogReader.py	
-
-Updated EdLogReader.py to set several buttons on the same device simultaneously in response to in game events.
-
-Changed Configuration file structure to accomodate the multiple-buttons (for the changes, see comments in configuration file).
-
-Added/changed command line parameters
-
-Changed the function and variable names to be more readable (code fixes).
-
-Various minor bug fixes.
-
 ## Required:
 1) Elite Dangerous game
 
@@ -58,9 +44,6 @@ Make sure the device names and id correspond to your devices, check with your VP
  	/h or help   - show this help
 	
 	/d or device - open a window and test devices before reading the game log
-	
-	/t or test   - read an existing log file from the front, and show device LEDs based on that file's data
-	Note, a lot of test information is printed out to your command windowe or the IDLE test window (if relevant)
 
 ## Trouble shooting
 1) The VPC_LED_Control.exe should be the same version as the VPC Configuration Tool used to configure your device.
