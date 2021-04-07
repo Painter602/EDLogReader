@@ -24,10 +24,8 @@ Licence:
 
 """
 
-from datetime import datetime
 import glob
 import json
-import os
 import sys
 
 def in_args( *args ):
@@ -43,8 +41,8 @@ def in_args( *args ):
         ret = ret or f'{flag}s' in (x.lower() for x in sys.argv)
     return ret
 
-BTEST = in_args( '/t', 'test')
-DEVICE_TEST = in_args( '/d', 'device')
+BTEST = in_args( '/t', '-t', 't', 'test')
+DEVICE_TEST = in_args( '/d', '-d', 'd', 'device')
 
 COLOURS = ["00", "40", "80", "FF"]   # colours available on Virpil devices
 CONFIG_FILE = "conf.json"
@@ -52,7 +50,7 @@ DEFAULT_COMMAND = 1                      # default command
 LOG_FILE = "Journal.*.log"
 LANG_FILE = "lang.$.json"
 LANG_FILE_NAME = LANG_FILE.replace("$", "*")
-PROG_NAME = sys.argv[0].split('\\')[-1].split('.')[0]
+RTEST = in_args( '/r', '-r', 'r', 'running-test', '/t', '-t', 't', 'test')
 SHOW_HELP =  'help' in (x.lower() for x in sys.argv) or '/h' in (x.lower() for x in sys.argv)
 
 config = []
@@ -77,14 +75,6 @@ def expand_commands(jsn_txt):
         for cmd in commands:
             print(cmd)
     return commands
-
-def error( module, txt ):
-    error_file = open( f'{PROG_NAME}.log', 'a' )
-    error_file.write( f'{datetime.utcnow()} UTC\t\tModule: {module}\t\t{txt}\n' )
-    error_file.flush()
-    os.fsync(error_file.fileno())
-    error_file.close()
-    
 
 def load_languages():
     '''
