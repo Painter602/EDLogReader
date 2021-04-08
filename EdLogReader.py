@@ -7,6 +7,7 @@ from functools import partial
 import glob
 import json
 import os
+import queue
 import random
 import subprocess
 import sys
@@ -18,10 +19,9 @@ from tkinter import messagebox
 import list_joysticks
 import shared as edlr
 
-PROG_NAME =         sys.argv[0].split('\\')[-1].split('.')[0]
+PROG_NAME =  edlr.PROG_NAME
 
-LICENCE = ('\n'
-           'Licence:\n'
+LICENSE = ('License:\n'
            '=======\n'
            + PROG_NAME + ', a script to change the LEDs on '
            'Virpil conrollers in responce to events in Elite Dangerous (game)\n'
@@ -41,30 +41,25 @@ LICENCE = ('\n'
            '51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.'
            )
 
+ABOUT = ('About '+ PROG_NAME + '\n\n'
+         'Written by Painter602\n\n'
+         'For now, contact me through github (https://github.com/Painter602/EDLogReader)\n'
+         'Or message me on Virpil\'s forum\n\n'
+         'Copyright (C) 2021, Painter602\n\n'
+         )
+
 BTEST =             edlr.BTEST
 COLOURS =           edlr.COLOURS            # colour values
 DEFAULT_COMMAND =   edlr.DEFAULT_COMMAND    # default command
 DEVICE_TEST =       edlr.DEVICE_TEST
 RTEST =             edlr.RTEST
-SHOW_HELP =         edlr.SHOW_HELP
 
-HELP = ( '\n\n' + PROG_NAME + ' Help\n'
+HELP = ( PROG_NAME + ' Help\n'
          '==============\n'
          'You may run this script with NO parameters, and it should read your\r'
          'Elite Dangerous log files, and respond by changing the LED colours\r'
          'displayed on your Virpil Devices.\n\n'
-         'Note: your configuration file may need modification before that works.\n\n\n'
-         'Optional command line parameters\n'
-         '--------------------------------\n'
-         '/h or help\t\\- show this help\n'
-         '/d or device(s)\t\\- test devices before reading the game log\n'
-         # '/r or running-test\t- test main running\n'
-         # '/t or test\t\t- read an existing log file from the front,\n'
-         # '\t\t\\  and show device LEDs based on that file\'s\n'
-         # '\t\t\\  data\n\n'
-         # 'Note: In test mode, a lot of test information is printed out to your command\r'
-         # 'window.'
-         '\n\n'
+         'Note: your configuration file may need modification before that works.\n'
          )
 # HELP: when displaying HELP on command line windows
 #       replace carriage return (\r) with new line (\n)
@@ -79,21 +74,19 @@ HELP = ( '\n\n' + PROG_NAME + ' Help\n'
 instructions = edlr.instructions    # dictionary of available commands (filled at run time)
 
 def static():
-    '''
-    placeholder to store shared/static variables (globals)
-    '''
+    ''' placeholder to store shared/static variables (globals) '''
 static.b_done_start = False
 static.joysticks = {}
 static.running=False
 static.skip_test = False
+static.test_devices = False
+# main_window = None
+static.labels = {}
 
 def do_colour( device, cmd=None):
     '''
     set colours for a device
     '''
-    if cmd is None:
-        cmd={'Red': 0, 'Green': 0, 'Blue': 0}
-
     if not device in static.joysticks:
         return
 
@@ -106,13 +99,15 @@ def do_colour( device, cmd=None):
     if now_time < do_colour.next_colour_time[ device ]:
         return
 
-    dev_id  = f"{config.config[ 'devices' ][ device ][ 'id' ]}"
-    for i in cmd:
-        red     = f'{COLOURS[ cmd[ i ]["Red"] ]}'
-        green   = f'{COLOURS[ cmd[ i ]["Green"] ]}'
-        blue    = f'{COLOURS[ cmd[ i ]["Blue"] ]}'
+    if cmd is None:
+        cmd={0: {'Red': 0, 'Green': 0, 'Blue': 0}}
+    for key in cmd:
+        dev_id  = f"{config.config[ 'devices' ][ device ][ 'id' ]}"
+        red     = f'{COLOURS[ cmd[ key ]["Red"]]}'
+        green   = f'{COLOURS[ cmd[ key ]["Green"]]}'
+        blue    = f'{COLOURS[ cmd[ key ]["Blue"]]}'
 
-        run = f"\"{config.config[ '__pathToLEDControl__' ]}\" {dev_id} {i} {red} {green} {blue}"
+        run = f"\"{config.config[ '__pathToLEDControl__' ]}\" {dev_id} {key} {red} {green} {blue}"
         # update( main.window, f'Sent to {device}: {i} {red} {green} {blue}',
         #        count_max=1, show_counter=False )
         if BTEST:
@@ -125,26 +120,21 @@ def do_colour( device, cmd=None):
 do_colour.next_colour_time = {}    # initialise next_colour_time
 
 def do_reset():
-    '''
-    Reset a'' devices to default values
-    '''
+    ''' Reset a'' devices to default values '''
     manage( '{ "event":"Default" }' )
     return True
 
-def help_mssg( args=('Help',HELP)):
-    '''
-    Display a message in a mesage box
-    '''
-    (title, txt) = args
-    message = txt.replace('\r', ' ').replace('\t\\', '\t')
-    messagebox.showinfo(master=main.window.window,
-                        title=f'{PROG_NAME} - {title}',
-                        message=message)
+def help_mssg( args=None):
+    ''' Display a message in a mesage box '''
+    if args is not None:
+        (window, title, txt) = args
+        message = txt.replace('\r', ' ').replace('\t\\', '\t')
+        messagebox.showinfo(master=window,
+                            title=f'{PROG_NAME} - {title}',
+                            message=message)
 
 def reset_height( ctrl, height_max, range_max=20 ):
-    '''
-    Set the height of the text box
-    '''
+    ''' Set the height of the text box '''
     if height_max > range_max:
         height_max = range_max
     if height_max > ctrl[ 'height' ]:
@@ -159,9 +149,7 @@ def reset_height( ctrl, height_max, range_max=20 ):
                 pass
 
 def reset_width( ctrl, width_min ):
-    '''
-    Set the width of the text box
-    '''
+    ''' Set the width of the text box '''
 
     if width_min > 100:
         width_min = 100
@@ -178,9 +166,7 @@ def reset_width( ctrl, width_min ):
                 pass
 
 def set_skip_test( set_skip=True ):
-    '''
-    Skip (or stop) testing commands
-    '''
+    ''' Skip (or stop) testing commands '''
     if set_skip:
         try:
             main.window.button_skip()
@@ -195,16 +181,16 @@ def stop_running():
     static.running = False
 
 class Window:
-    '''
-    A window to show events and warnings, primarily in the early stages of the script
-    '''
+    ''' A window to show events and warnings, primarily in the early stages of the script '''
     lines = 0
 
-    def __init__(self, missing):
+    def __init__(self):
         self.closing = False
         self.window = tk.Tk()
         self.window.title(f'{PROG_NAME}')
+        self.menu()
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.set_queue()
 
         self.frm = tk.Frame(master=self.window, bd=10)
         self.title = tk.Label( self.frm, text="Start Up Test")
@@ -216,19 +202,56 @@ class Window:
         self.frm.pack(fill=tk.X)
         frm = tk.Frame(master=self.window, bd=5)
 
-        self.skip_button = make_button( frm, "Skip Device Test", self.button_skip )
-        make_button( frm, "Help", partial( help_mssg, ('Help', HELP) ) )
-        make_button( frm, "Licence", partial( help_mssg, ('Licence', LICENCE ) ) )
-
-        if len( missing ):
-            make_button( frm, "Exit", self.close_down )
-        else:
-            make_button( frm, "Exit", stop_running )
+        self.skip_button = make_button( frm, "Device Test", self.device_test )
+        # make_button( frm, "Exit", self.stop) # stop_running )
 
         frm.pack()
-        self._do_missing( missing )
+        thread = Thread(target = partial(threaded_function, self))
+        thread.daemon = True
+        thread.start()
+        self.window.mainloop()
+        static.running = False
+        thread.join()
 
-    def _do_missing(self, missing ):
+    def device_test(self):
+        ''' toggle request to test devices '''
+        static.test_devices = not static.test_devices
+        if static.test_devices:
+            self.skip_button[ 'relief' ] = tk.SUNKEN
+            update( self, 'Device test starting in a few seconds', 0, -1 )
+        else:
+            self.skip_button[ 'relief' ] = tk.RAISED
+            update( self, 'Device test stopping in a few seconds', 0, -1 )
+
+    def set_queue(self):
+        ''' create a message queue, and start watching it '''
+        self.update_queue = queue.Queue()
+        self.window.after(100, self.update_listen_for_result)
+
+    def menu(self):
+        ''' create menus '''
+        window = self.window
+        self.menu_bar = tk.Menu( master=window )
+
+        file_menu = tk.Menu(self.menu_bar, tearoff=0)
+        menu_list = {}
+        menu_list[ 'Exit' ] = self.stop
+        make_menu( file_menu, menu_list )
+        make_string( 'file', window )
+        self.menu_bar.add_cascade(label=static.labels[ 'file' ].get(), menu=file_menu, underline=0)
+
+        help_menu = tk.Menu(self.menu_bar, tearoff=0)
+        menu_list = {   'help': partial( help_mssg, (window, 'help', HELP)),
+                        'license': partial( help_mssg, (window, 'license', LICENSE )),
+                        'about': partial( help_mssg, (window, 'about', ABOUT)) }
+        make_menu( help_menu, menu_list )
+        make_string( 'help', window )
+        self.menu_bar.add_cascade(label=static.labels[ 'help' ].get(), menu=help_menu, underline=0)
+
+        window.config( menu=self.menu_bar )
+
+    def missing(self, missing ):
+        ''' display missing/unconnected devices '''
         if len( missing ):
             mssg_top    = [" ",
                            "Devices are Missing:",
@@ -258,13 +281,11 @@ class Window:
             self.tbx.config( bg="#ff0" )
             self.tbx.master.config( bg="#000" )
             self.button_skip()
-            self.window.mainloop()
+            # self.window.mainloop()
             sys.exit( 0 )
 
     def button_skip(self):
-        '''
-        Stop processing, and (if possible) disable the button to do this
-        '''
+        ''' Stop processing, and (if possible) disable the button to do this '''
         static.skip_test = True
         try:
             self.skip_button['state'] = tk.DISABLED
@@ -272,15 +293,18 @@ class Window:
             pass
 
     def on_closing( self ):
-        '''
-        Ensure program variables are set to reflect the lack of a window
-        '''
-        self.close()
+        ''' Ensure program variables are set to reflect the lack of a window '''
+        self.stop()
 
-    def close( self ):
-        '''
-        Prepare this window to be closed, destroy the window
-        '''
+    def set_title( self, text ):
+        ''' Set or change the message above the text box '''
+        try:
+            self.title[ 'text' ] = text
+        except tk.TclError:
+            pass
+
+    def stop( self ):
+        ''' Prepare this window to be closed, destroy the window '''
         set_skip_test(True)
         self.closing = True
         try:
@@ -288,26 +312,8 @@ class Window:
         except tk.TclError:     # likely this has been destroyed already
             pass
 
-    def close_down( self ):
-        '''
-        Prepare to close this window and exit the program
-        '''
-        stop_running()
-        self.close()
-
-    def set_title( self, text ):
-        '''
-        Set or change the message above the text box
-        '''
-        try:
-            self.title[ 'text' ] = text
-        except tk.TclError:
-            pass
-
     def update( self, txt, counter=0, count_max=0, show_command_counter=True):
-        '''
-        Update the window, by showing new text
-        '''
+        ''' Update the window, by showing new text '''
         if count_max:
             txt_table = self.tbx.get("1.0", "end")
             reset_height( self.tbx, count_max )
@@ -319,142 +325,165 @@ class Window:
                 self.tbx.delete( "1.0", "2.0" )
             self.tbx.insert( tk.END, txt )
 
-        try:
-            self.lbl.destroy()
-        except tk.TclError:
-            pass
         if show_command_counter:
-            if count_max:
-                self.lbl = tk.Label( self.frm, text=f"Command {counter} of {count_max}")
+            if count_max > 0:
+                # self.lbl = tk.Label( self.frm, text=f"Command {counter} of {count_max}")
+                self.lbl[ 'text' ] = f"Command {counter} of {count_max}"
+            elif count_max < 0:
+                self.lbl[ 'text' ] = ''
             else:
-                self.lbl = tk.Label( self.frm, text=txt)
-            self.lbl.pack(side=tk.LEFT)
+                #self.lbl = tk.Label( self.frm, text=txt)
+                self.lbl[ 'text' ] = txt
+        else:
+            self.lbl[ 'text' ] = ''
+
+        self.lbl.pack()
         self.frm.update()
         self.window.update()
 
-def do_start():
-    '''
-    Handle start up routines
-    '''
-    if static.b_done_start:
-        return True
-    static.running = True
+    def update_listen_for_result( self ):
+        """ Check if there is something in the queue. """
+        try:
+            (func, args) = self.update_queue.get(0)
+            if func == self.update:     # is this the function
+                ( txt, counter, count_max, show_command_counter ) = args
+                self.update( txt, counter, count_max, show_command_counter)
+            elif func == self.missing:  # is this the function
+                self.missing( args )
+            else:
+                func()
+            self.window.after(100, self.update_listen_for_result)
+        except queue.Empty:
+            self.window.after(100, self.update_listen_for_result)
 
-    missing = {}
-
-    find_joysticks()
-    for instr in instructions:
-        for ins in instructions[ instr ]:
-            if not ins in static.joysticks:
-                if ins in missing:
-                    missing[ ins ] += 1
-                else:
-                    missing[ ins ] = 1
-
-    main.window = Window( missing )
-    if len( missing ) > 0:
-        return False
-
-    # Display the colour combination for each event to be displayed
+def device_test(main_window):
+    ''' Display the colour combination for each event to be displayed '''
     len_inst = len( instructions )
 
     ctr = 0
+    update( main_window, '', ctr, len_inst )
+    update( main_window, 'Device Test', ctr, len_inst )
+    update( main_window, '===========', ctr, len_inst )
     for instr in instructions:
-        if not DEVICE_TEST:
-            break
-        if static.skip_test:
+        if not static.test_devices:
             break
         if not static.running:
             break
 
         ctr += 1
-        update( main.window, instr, ctr, len_inst )     # show which command
         manage( '{"event":"' + instr + '"}' )           # send command to devices
-        time.sleep(2)
+        update( main_window, instr, ctr, len_inst )     # show which command
+        time.sleep(4)
 
+    if static.test_devices:
+        main_window.update_queue.put( (main_window.device_test, () ))
+
+    update( main_window, '', ctr, len_inst )
+    update( main_window, 'Device Test Stopped', ctr, len_inst )
+    update( main_window, '===================', ctr, len_inst )
+    update( main_window, '', ctr, len_inst )
+
+
+
+def do_start(main_window):
+    ''' Handle start up routines '''
+    if static.b_done_start:
+        return True
+    static.running = True
+
+    missing = []
+
+    find_joysticks()
+    for instr in instructions:
+        for ins in instructions[ instr ]:
+            if not ins in static.joysticks:
+                if ins not in missing:
+                    missing.append( ins )
+
+    if len( missing ) > 0:
+        main_window.update_queue.put( (main_window.missing, missing ))
+        return False
     do_reset()
     static.b_done_start = True
     return True
 
 def find_joysticks():
-    '''
-    find devices currently attached
-    '''
+    ''' find devices currently attached '''
     for stick in list_joysticks.list_joy_sticks():
         static.joysticks[ stick[ 'oem_name' ] ] = stick
 
-def follow(thefile):
-    '''
-    generator function that yields new lines in a file
-    '''
-
-    test_sleep = 0
-
+def follow(the_file, main_window):
+    ''' generator function that yields new lines in a file '''
     if not BTEST:
         # seek the end of the file
-        thefile.seek(0, os.SEEK_END)
-    cycle = 0
+        the_file.seek(0, os.SEEK_END)
+
+    follow.cycle = 0
     is_reset = False
 
     # start infinite loop
     while static.running:
-        if RTEST:
-            # check every line, but give a chance for the responce to be noted
-            #   this can take a while to process, especially at the start of the
-            #   file, bear with it.
-            if test_sleep:
-                time.sleep( test_sleep )
+        if static.test_devices:
+            return
 
         # read last line of file
-        line = thefile.readline()
-        if RTEST:
-            test_sleep = 0
-            print( line )
-            if 'event' in line:
-                data = json.loads(line)
-                if data[ 'event' ] in instructions:
-                    test_sleep = 2
+        line = the_file.readline()
 
         # sleep if file hasn't been updated
         if line:
-            cycle = 0
+            follow.cycle = 0
             is_reset = False
             yield line
             continue
 
         if not is_reset:
-            if cycle > config.config[ "resetTime" ]:
+            if follow.cycle > config.config[ "resetTime" ]:
                 is_reset = do_reset()
 
-        if cycle > config.config[ 'timeOut' ]: # 60:  we have had a minute of inaction
+        if follow.cycle > config.config[ 'timeOut' ]: # 60:  we have had a minute of inaction
             return                              #  - maybe we need a different file?
 
         if static.running:
             time.sleep(config.config[ 'sleepTime' ])
         else:
             return
-        cycle += config.config[ 'sleepTime' ]
-        refresh = config.config[ "timeOut" ]- cycle + config.config[ "sleepTime" ]
-        txt = f'Scanning ED log file (file refreshes in {refresh}s if no new events)'
-        update( main.window, txt, 0, 1, False )      #, instr, ctr, len_inst )
 
-        if RTEST:
-            print( ".", end=' ' )
+        follow.cycle += config.config[ 'sleepTime' ]
+        refresh = config.config[ "timeOut" ]- follow.cycle + config.config[ "sleepTime" ]
+        if refresh >= 0:
+            txt = f'Scanning ED {edlr.LOG_FILE} files '
+            txt = f'{txt} (file refreshes in {refresh}s if no new events)'
+        else:
+            txt = f'Scanning ED {edlr.LOG_FILE} files'
+        update( main_window, txt, 0, 1, False )      #, instr, ctr, len_inst )
 
 def make_button(frm, text, command, side=tk.LEFT):
-    '''
-    Make a simple button
-    '''
+    ''' Make a simple button '''
     button = tk.Button(frm,
               text=f' {text} ',
               command=command )
     button.pack(side=side)
     return button
 
+def make_menu( menu, menulist ):
+    ''' make a drop down menu list '''
+    master = menu
+    while hasattr( master, 'master'):
+        master = master.master
+
+    for item in menulist:
+        if menulist[ item ] is None:
+            menu.add_separator()
+        else:
+            if item == item.lower():
+                make_string( item, master=master )
+                label = static.labels[ item ].get()
+            else:
+                label = item
+            menu.add_command(label=label, command=menulist[ item ])
+
 def manage( line ):
-    '''
-    with a line from the game log, arrange to send colour instructions to devices
-    '''
+    ''' with a line from the game log, arrange to send colour instructions to devices '''
     try:
         data = json.loads(line)
     except json.decoder.JSONDecodeError:
@@ -466,12 +495,11 @@ def manage( line ):
         for k in instructions[ data [ "event" ] ]:
             if BTEST:
                 print( f'{k}: -> {instructions[ data [ "event" ] ][ k ]}' )
+            print( f'{k}: -> {instructions[ data [ "event" ] ][ k ]}' )
             do_colour( k, cmd=instructions[ data [ 'event' ] ][ k ])
 
 def random_colour( colour_list=None ):
-    '''
-    Generate random colour codes
-    '''
+    ''' Generate random colour codes '''
     if colour_list is None:
         colour_list = []
         for colour in range( len( COLOURS ) ):
@@ -481,9 +509,7 @@ def random_colour( colour_list=None ):
              'Blue': random.choice(colour_list)}
 
 def config():
-    '''
-    Read configuration file, and store values in memory
-    '''
+    ''' Read configuration file, and store values in memory '''
 
     config_file = open(f"{edlr.CONFIG_FILE}","r")
 
@@ -491,6 +517,8 @@ def config():
         data = json.loads(line)
         if 'Config' in data:
             config.config = data['Config']
+            if 'language' in config.config:
+                edlr.language = config.config['language']
             for device in config.config[ 'devices' ]:
                 if not 'cmdCount' in config.config[ "devices" ][ device ]:
                     config.config[ "devices" ][ device ][ 'cmdCount' ] = 1
@@ -549,6 +577,10 @@ def config():
         for event in instructions:
             print( f'Event {event}: {instructions[ event ]}' )
 
+def make_string( key, master ):
+    ''' make a string varaiable '''
+    static.labels[ key ] = edlr.make_string( key, master )
+
 def set_path( path_key ):
     '''
     Set paths based on information in the config file
@@ -567,76 +599,64 @@ def set_path( path_key ):
                     path += term
         config.config[ new_key ] = path
 
-def show_help():
-    '''
-    Display a help message, then exit the script
-    '''
-    if SHOW_HELP:
-        message = HELP.replace('\r', '\n').replace('\\', '\t')
-        print(message)
-        sys.exit(0)
-
 def update( window, txt, counter=0, count_max=0, show_counter=True ):
     '''
     Refresh window (while it is there)
     '''
-    try:
-        window.update( txt, counter, count_max, show_counter )
-    except tk.TclError:
-        static.running = False
+    # try:
+    window.update_queue.put( (window.update, ( txt, counter, count_max, show_counter ) ))
+    # except tk.TclError:
+    #    static.running = False
 
-def threaded_function():
+def threaded_function(main_window):
     '''
     Heart beat of the main process:
         Keeps checking the log files,
         and sending commands to joy sticks
     '''
-    read_logs = do_start()
-    main.window.button_skip()
-    if read_logs:
-        main.window.set_title( 'Scanning ED Logs' )
-    while static.running:
-        if not read_logs:
-            time.sleep( 1 )
-            continue
 
-        log_file_list = sorted( glob.glob(f"{config.config['__fPath__']}{edlr.LOG_FILE}") )
+    config()
+    read_logs = do_start(main_window)
+    if not read_logs:
+        return
+    ## main.window.button_skip()
+    ## if read_logs:
+    ##    main.window.set_title( 'Scanning ED Logs' )
+    while static.running:
+        if static.test_devices:
+            device_test(main_window)
+
+        log_file_list = sorted( glob.glob(f"{config.config['__fPath__']}"
+                                          f"{edlr.LOG_FILE}"
+                                          f"{edlr.LOG_SUFFIX}"
+                                          ))
         if len( log_file_list ) == 0:
             messagebox.showinfo(
+                master=main_window.window,
                 title=f'{PROG_NAME} Warning',
                 message='No Elite Dangerous log files were found\nPlease check your file path')
-            static.running = False
+            main_window.update_queue.put( (main_window.stop, () ))
             break
 
         file_path = f"{log_file_list[ -1 ]}"
         file_name = file_path.split('\\' )[ -1 ].split('/' )[ -1 ]
-        update( main.window, f'Checking {file_name}', count_max=1, show_counter=False )
+        update( main_window, f'Checking {file_name}', count_max=1, show_counter=False )
 
         log_file = open(file_path,"r")
-        log_lines = follow(log_file)
+        log_lines = follow(log_file, main_window)
         for line in log_lines:
             manage(line)
         log_file.close()
 
-        if RTEST:
-            print( f'sleep {config.config[ "sleepTime" ]}' )
-        time.sleep(config.config[ 'sleepTime' ])
-
-    main.window.close()
-    sys.exit(0)
+        if static.running:
+            if RTEST:
+                print( f'sleep {config.config[ "sleepTime" ]}' )
+            time.sleep(config.config[ 'sleepTime' ])
 
 def main():
-    '''
-    Main process
-    '''
-
-    main.window = None
-    show_help()
-    config()
-    thread = Thread(target = threaded_function)
-    thread.daemon = True
-    thread.start()
-    thread.join()
+    ''' Main process '''
+    Window()
+    # edlr.unused()
 
 if __name__ == '__main__':
     main()

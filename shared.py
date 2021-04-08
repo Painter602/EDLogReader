@@ -26,7 +26,10 @@ Licence:
 
 import glob
 import json
+import os
 import sys
+import tkinter as tk
+from datetime import datetime
 
 def in_args( *args ):
     '''
@@ -44,17 +47,21 @@ def in_args( *args ):
 BTEST = in_args( '/t', '-t', 't', 'test')
 DEVICE_TEST = in_args( '/d', '-d', 'd', 'device')
 
-COLOURS = ["00", "40", "80", "FF"]   # colours available on Virpil devices
+COLOURS = ["00", "40", "80", "FF"]              # colours available on Virpil devices
 CONFIG_FILE = "conf.json"
-DEFAULT_COMMAND = 1                      # default command
-LOG_FILE = "Journal.*.log"
+DEFAULT_COMMAND = 1                             # default command
+LOG_FILE = "Journal"
+LOG_FILTER = ['', 'Alpha', 'Beta', 'Gamma' ]    # Gamma release very rare/never used?
+LOG_SUFFIX = "*.log"
 LANG_FILE = "lang.$.json"
 LANG_FILE_NAME = LANG_FILE.replace("$", "*")
+PROG_NAME =         sys.argv[0].split('\\')[-1].split('.')[0]
 RTEST = in_args( '/r', '-r', 'r', 'running-test', '/t', '-t', 't', 'test')
 SHOW_HELP =  'help' in (x.lower() for x in sys.argv) or '/h' in (x.lower() for x in sys.argv)
 
 config = []
 instructions = {}
+language = 'en'
 PLACES = 2
 
 def expand_commands(jsn_txt):
@@ -75,6 +82,16 @@ def expand_commands(jsn_txt):
         for cmd in commands:
             print(cmd)
     return commands
+
+def error( module, function, txt ):
+    ''' Write errors to a log file, to help track them '''
+    error_file = open( f'{PROG_NAME}.log', 'a', encoding="utf-8" )
+    error_file.write(   f'{datetime.utcnow()} UTC\t'
+                        f'{os.path.splitext(module)[ 0 ]} . '
+                        f'{function}\t\t{txt}\n' )
+    error_file.flush()
+    os.fsync(error_file.fileno())
+    error_file.close()
 
 def load_languages():
     '''
@@ -98,6 +115,7 @@ def load_languages():
         jsn_txt = json.loads( txt )
         jsn_txt[ 'commands' ] = expand_commands( jsn_txt )
         languages[ jsn_txt[ 'code' ]] = jsn_txt
+        # translate.unused[ jsn_txt[ 'code' ]] = jsn_txt
         if BTEST:
             print(languages[ jsn_txt[ 'code' ]])
     return languages
@@ -107,15 +125,55 @@ def main():
     run module as a stand-alone program
     '''
     languages = load_languages()
-    for language in languages:
-        print( f'{language}:' )
-        for xlate in languages[ language ]:
+    for lang in languages:
+        print( f'{lang}:' )
+        for xlate in languages[ lang ]:
             if xlate == 'commands':
                 print()
-                for cmd in languages[ language ][ xlate ]:
+                for cmd in languages[ lang ][ xlate ]:
                     print( f'\t{ cmd } ' )
             else:
-                print( f'\t{xlate}: { languages[ language ][ xlate ] }' )
+                print( f'\t{xlate}: { languages[ lang ][ xlate ] }' )
+
+def make_string(txt, master=None ):
+    ''' Make a string variable '''
+    tlate = tk.StringVar(master=master)
+    tlate.set( translate(txt, language ) )
+    return tlate
+
+def translate( txt, lang=language ):
+    ''' take a lookup key (txt), and provide a translation
+        in language lang, or English, or default to txt '''
+    # txt = txt.lower( )
+    if lang not in translate.unused:
+        translate.unused[ lang ] = {}
+    if txt in translate.unused[ lang ]:
+        translate.unused[ lang ].pop( txt )
+    if txt in translate.languages[ lang ]:
+        return translate.languages[ lang ][ txt ]
+
+    # note errors and missing translations
+    if lang not in translate.missing:
+        translate.missing[ lang ] = []
+    # and record it in the error log (without duplication - at least, for this run)
+    if not txt in translate.missing[ lang ]:
+        translate.missing[ lang ].append( txt )
+        error( os.path.basename(__file__), 'translate', f'translation missing ({lang}): {txt}' )
+
+    if lang != 'en':
+        return translate( txt, lang='en' )
+    return txt
+
+translate.missing = {}
+translate.unused = {}
+translate.languages = load_languages()
+
+def unused():
+    ''' list unused translations '''
+    return
+    print( translate.unused )
+    for not_used in translate.unused:
+        print( f'{not_used}: {translate.unused[not_used]}' )
 
 if __name__ == '__main__':
     main()
