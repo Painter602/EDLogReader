@@ -1,5 +1,15 @@
 # ED Log Reader
 ## Change log
+### 8 Apr 2021
+Revised calls to the main window so that the script is more responsive.
+Moved most buttons into menu options, removing the buttons.
+Removed 'Skip Device Testing' button, replacing it with a run-time test.
+
+Removed most command line options.
+Started preparations for multi-language support.
+
+Extended the range of commands in the English language translations file.
+
 ###  7 Apr 2021
 Change to the way the script works.
 It now holds a window open while checking the ED log files.
