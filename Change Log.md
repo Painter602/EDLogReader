@@ -1,5 +1,9 @@
 # ED Log Reader
 ## Change log
+### 9 Apr 2021
+Rearranged buttons, and added tool-tips.
+Lots of bugs chased down and removed.
+
 ### 8 Apr 2021
 Revised calls to the main window so that the script is more responsive.
 Moved most buttons into menu options, removing the buttons.
