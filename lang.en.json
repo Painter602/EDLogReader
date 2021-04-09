@@ -28,6 +28,8 @@
 	"ignore": "Ignore",
 	"interest": "Event is of interest",
 	"language": "Language",
+	"latest_default": "Use latest log file (default)",
+	"live_game": "Live Game log files",
 	"license": "License",
 	"name": "Name",
 	"pathToLEDControl": "Path to LED Control Program",

@@ -15,12 +15,12 @@ import time
 from threading import Thread
 import tkinter as tk
 from tkinter import messagebox
+import ttips
 
 import list_joysticks
 import shared as edlr
 
 PROG_NAME =  edlr.PROG_NAME
-
 LICENSE = ('License:\n'
            '=======\n'
            + PROG_NAME + ', a script to change the LEDs on '
@@ -46,13 +46,13 @@ ABOUT = ('About '+ PROG_NAME + '\n\n'
          'For now, contact me through github (https://github.com/Painter602/EDLogReader)\n'
          'Or message me on Virpil\'s forum\n\n'
          'Copyright (C) 2021, Painter602\n\n'
+         'Thank-you to Fixitman for testing and for his change suggestions'
          )
 
-BTEST =             edlr.BTEST
-COLOURS =           edlr.COLOURS            # colour values
+TEST           =   edlr.TEST
+COLOURS         =   edlr.COLOURS            # colour values
 DEFAULT_COMMAND =   edlr.DEFAULT_COMMAND    # default command
-DEVICE_TEST =       edlr.DEVICE_TEST
-RTEST =             edlr.RTEST
+VERSION         =   '0.01a'                 # version numbers will probably slip
 
 HELP = ( PROG_NAME + ' Help\n'
          '==============\n'
@@ -73,21 +73,27 @@ HELP = ( PROG_NAME + ' Help\n'
 
 instructions = edlr.instructions    # dictionary of available commands (filled at run time)
 
-def static():
+def state():
     ''' placeholder to store shared/static variables (globals) '''
-static.b_done_start = False
-static.joysticks = {}
-static.running=False
-static.skip_test = False
-static.test_devices = False
-# main_window = None
-static.labels = {}
+state.archive_files = False
+state.b_done_start  = False
+state.block_follow  = False
+state.joysticks     = {}
+state.queue_ms      = 50
+state.running       = False
+state.skip_test     = False
+state.test_devices  = False
+state.labels        = {}
+state.last_txt      = ''
+state.file_filter   = edlr.LOG_FILTER[ 0 ]
+state.reset         = False
+state.ticker        = 0
 
 def do_colour( device, cmd=None):
     '''
     set colours for a device
     '''
-    if not device in static.joysticks:
+    if not device in state.joysticks:
         return
 
     if not device in config.config[ 'devices' ]:
@@ -95,7 +101,7 @@ def do_colour( device, cmd=None):
 
     now_time = datetime.utcnow()
     if not device in do_colour.next_colour_time:
-        do_colour.next_colour_time[ device ] = datetime(1900, 1, 1)     # never run before
+        do_colour.next_colour_time[ device ] = datetime(1900, 1, 1)     # first run this sessio
     if now_time < do_colour.next_colour_time[ device ]:
         return
 
@@ -108,12 +114,12 @@ def do_colour( device, cmd=None):
         blue    = f'{COLOURS[ cmd[ key ]["Blue"]]}'
 
         run = f"\"{config.config[ '__pathToLEDControl__' ]}\" {dev_id} {key} {red} {green} {blue}"
-        # update( main.window, f'Sent to {device}: {i} {red} {green} {blue}',
-        #        count_max=1, show_counter=False )
-        if BTEST:
+        if TEST:
             print( run )
 
-        subprocess.Popen( run, creationflags=subprocess.CREATE_NEW_CONSOLE )
+        if state.running:
+            subprocess.Popen( run, creationflags=subprocess.CREATE_NEW_CONSOLE )
+                           
     t_delta = timedelta(milliseconds=config.config[ "timedeltaMs" ])
     do_colour.next_colour_time[ device ] = now_time + t_delta
 
@@ -132,7 +138,6 @@ def help_mssg( args=None):
         messagebox.showinfo(master=window,
                             title=f'{PROG_NAME} - {title}',
                             message=message)
-
 def reset_height( ctrl, height_max, range_max=20 ):
     ''' Set the height of the text box '''
     if height_max > range_max:
@@ -172,61 +177,113 @@ def set_skip_test( set_skip=True ):
             main.window.button_skip()
         except AttributeError:
             pass
-    static.skip_test = set_skip
+    state.skip_test = set_skip
+
+def set_state_reset( setting ):
+    ''' set state.refreshing, and request a queue flush if needed '''
+    state.reset = setting
 
 def stop_running():
     '''
     Set a flag to stop running this script
     '''
-    static.running = False
+    state.running = False
 
 class Window:
     ''' A window to show events and warnings, primarily in the early stages of the script '''
     lines = 0
 
     def __init__(self):
-        self.closing = False
+        # self.closing = False
         self.window = tk.Tk()
         self.window.title(f'{PROG_NAME}')
+        self.window.minsize(700, 430)
         self.menu()
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.make_frames()
+
+        self.stop_update = False
+        self.in_update = False
+        self.next_update = datetime(1900, 1, 1)     # initialising, first run this session
+
         self.set_queue()
-
-        self.frm = tk.Frame(master=self.window, bd=10)
-        self.title = tk.Label( self.frm, text="Start Up Test")
-        self.title.pack()
-        self.tbx = tk.Text(self.frm, height=20, width=70, padx=5, pady=5)
-        self.tbx.pack(fill=tk.X)
-        self.lbl = tk.Label( self.frm, text="Command    of    ")
-        self.lbl.pack(side=tk.LEFT)
-        self.frm.pack(fill=tk.X)
-        frm = tk.Frame(master=self.window, bd=5)
-
-        self.skip_button = make_button( frm, "Device Test", self.device_test )
-        # make_button( frm, "Exit", self.stop) # stop_running )
-
-        frm.pack()
         thread = Thread(target = partial(threaded_function, self))
         thread.daemon = True
         thread.start()
+        self.reset_title()
         self.window.mainloop()
-        static.running = False
+        state.running = False
         thread.join()
+
+    def archive_files( self ):
+        ''' toggle read archived log files '''
+        state.archive_files = not state.archive_files
+        if state.archive_files:
+            self.skip_button[ 'state' ] = tk.DISABLED
+            self.history_button[ 'relief' ] = tk.SUNKEN
+            self.update( 'Start reading older logs', 0, -1 )
+            self.reset_title()
+        else:
+            self.history_button[ 'relief' ] = tk.RAISED
+            self.update( 'Start reading current log', 0, -1 )
+            self.skip_button[ 'state' ] = tk.NORMAL
+            self.reset_title()
+        set_state_reset( True )
 
     def device_test(self):
         ''' toggle request to test devices '''
-        static.test_devices = not static.test_devices
-        if static.test_devices:
+        state.test_devices = not state.test_devices
+        if state.test_devices:
+            self.history_button[ 'state' ] = tk.DISABLED
             self.skip_button[ 'relief' ] = tk.SUNKEN
-            update( self, 'Device test starting in a few seconds', 0, -1 )
+            update( self, 'Device test will start in a few seconds', 0, -1 )
+            self.set_title( "Testing Devices" )
         else:
             self.skip_button[ 'relief' ] = tk.RAISED
-            update( self, 'Device test stopping in a few seconds', 0, -1 )
+            update( self, 'Device test will stop in a few seconds', 0, -1 )
+            self.history_button[ 'state' ] = tk.NORMAL
+            self.reset_title()
+
+    def qsize( self ):
+        ''' return the current size of the update queue '''
+        return self.update_queue.qsize()
 
     def set_queue(self):
         ''' create a message queue, and start watching it '''
-        self.update_queue = queue.Queue()
-        self.window.after(100, self.update_listen_for_result)
+        self.update_queue = queue.SimpleQueue()     # queue.Queue()
+        self.window.after(state.queue_ms, self.update_listen_for_result)
+
+    def make_frames(self):
+        ''' build the windows (and buttons) used '''
+        self.title = tk.Label( master=self.window, text="Loading")
+        self.title.pack()
+        tfrm = tk.Frame(master=self.window, padx=10)
+        self.tbx = tk.Text(tfrm, height=20, width=70, padx=5, pady=20)
+        self.tbx.pack(fill=tk.BOTH, expand=True)
+        tfrm.pack(fill=tk.BOTH, expand=True)
+
+        frm_btm = tk.Frame(master=self.window, padx=10, bd=5)
+        frm = tk.Frame(master=frm_btm, bd=5)
+        self.lbl = tk.Label( self.window, text="Command    of    ", anchor='w', padx=10)
+        self.lbl.pack(fill=tk.X, side=tk.LEFT, expand=True)
+        frm.pack(fill=tk.X)
+
+        bfrm = tk.Frame(frm_btm, bd=5)
+        lbl = tk.Label( self.window, text="Test buttons:", anchor='e')
+        lbl.pack(side=tk.LEFT)
+        self.skip_button = make_button( bfrm,    " Device Test ",
+                                        self.device_test,
+                                        tooltip='Just your devices,\nignoring your log files' )
+        self.history_button = make_button(  bfrm,
+                                            "Use Old Files",
+                                            self.archive_files,
+                                            tooltip=( 'Test devices by reading your old log files.\n'
+                                                      'Note: events are much closer in time with\n'
+                                                      'this test, so processing has been slowed down'
+                                                      ))
+        bfrm.pack(fill=tk.X)
+        frm_btm.pack(side=tk.BOTTOM, fill=tk.X)
+
 
     def menu(self):
         ''' create menus '''
@@ -235,10 +292,21 @@ class Window:
 
         file_menu = tk.Menu(self.menu_bar, tearoff=0)
         menu_list = {}
+        for file_filter in edlr.LOG_FILTER:
+            if file_filter == '':
+                label = 'live_game'
+            elif file_filter == '*':
+                label = 'latest_default'
+            else:
+                if not file_check( file_filter ):
+                    continue
+                label = file_filter
+            menu_list[ label ] = partial(set_filter, (self, file_filter))
+        menu_list[ 'none' ] = None
         menu_list[ 'Exit' ] = self.stop
         make_menu( file_menu, menu_list )
         make_string( 'file', window )
-        self.menu_bar.add_cascade(label=static.labels[ 'file' ].get(), menu=file_menu, underline=0)
+        self.menu_bar.add_cascade(label=state.labels[ 'file' ].get(), menu=file_menu, underline=0)
 
         help_menu = tk.Menu(self.menu_bar, tearoff=0)
         menu_list = {   'help': partial( help_mssg, (window, 'help', HELP)),
@@ -246,7 +314,7 @@ class Window:
                         'about': partial( help_mssg, (window, 'about', ABOUT)) }
         make_menu( help_menu, menu_list )
         make_string( 'help', window )
-        self.menu_bar.add_cascade(label=static.labels[ 'help' ].get(), menu=help_menu, underline=0)
+        self.menu_bar.add_cascade(label=state.labels[ 'help' ].get(), menu=help_menu, underline=0)
 
         window.config( menu=self.menu_bar )
 
@@ -281,12 +349,11 @@ class Window:
             self.tbx.config( bg="#ff0" )
             self.tbx.master.config( bg="#000" )
             self.button_skip()
-            # self.window.mainloop()
             sys.exit( 0 )
 
     def button_skip(self):
         ''' Stop processing, and (if possible) disable the button to do this '''
-        static.skip_test = True
+        state.skip_test = True
         try:
             self.skip_button['state'] = tk.DISABLED
         except tk.TclError:
@@ -295,6 +362,21 @@ class Window:
     def on_closing( self ):
         ''' Ensure program variables are set to reflect the lack of a window '''
         self.stop()
+
+    def reset_title(self, qualifier=None):
+        ''' Reset title based on the file filter '''
+        if qualifier is None:
+            if state.archive_files:
+                qualifier='Reading Old Files'
+            else:
+                qualifier='Scanning latest game file'
+        if state.file_filter == '':
+            title = f'{qualifier} - release version'
+        elif state.file_filter == '*':
+            title = qualifier
+        else:
+            title = f'{qualifier} - {state.file_filter} version'
+        self.set_title( title )
 
     def set_title( self, text ):
         ''' Set or change the message above the text box '''
@@ -306,7 +388,7 @@ class Window:
     def stop( self ):
         ''' Prepare this window to be closed, destroy the window '''
         set_skip_test(True)
-        self.closing = True
+        state.running = False
         try:
             self.window.destroy()
         except tk.TclError:     # likely this has been destroyed already
@@ -314,6 +396,7 @@ class Window:
 
     def update( self, txt, counter=0, count_max=0, show_command_counter=True):
         ''' Update the window, by showing new text '''
+        state.block_follow = True
         if count_max:
             txt_table = self.tbx.get("1.0", "end")
             reset_height( self.tbx, count_max )
@@ -327,37 +410,47 @@ class Window:
 
         if show_command_counter:
             if count_max > 0:
-                # self.lbl = tk.Label( self.frm, text=f"Command {counter} of {count_max}")
                 self.lbl[ 'text' ] = f"Command {counter} of {count_max}"
             elif count_max < 0:
                 self.lbl[ 'text' ] = ''
             else:
-                #self.lbl = tk.Label( self.frm, text=txt)
                 self.lbl[ 'text' ] = txt
         else:
             self.lbl[ 'text' ] = ''
 
         self.lbl.pack()
-        self.frm.update()
-        self.window.update()
+        if state.running:
+            self.window.update()
 
     def update_listen_for_result( self ):
         """ Check if there is something in the queue. """
-        try:
-            (func, args) = self.update_queue.get(0)
-            if func == self.update:     # is this the function
+        while state.running:
+            try:
+                (func, args) = self.update_queue.get(0)
+                state.block_follow = True
+            except queue.Empty:
+                # we didn't find anything, this is normal
+                state.block_follow = False
+                if state.running:
+                    self.window.after(state.queue_ms, self.update_listen_for_result)
+                return
+
+            #we found something
+            if func == self.update:     # the function passed in
                 ( txt, counter, count_max, show_command_counter ) = args
                 self.update( txt, counter, count_max, show_command_counter)
-            elif func == self.missing:  # is this the function
+            elif func == self.missing:  # the function passed in
                 self.missing( args )
             else:
                 func()
-            self.window.after(100, self.update_listen_for_result)
-        except queue.Empty:
-            self.window.after(100, self.update_listen_for_result)
+
+        self.window.after(state.queue_ms, self.update_listen_for_result)
 
 def device_test(main_window):
     ''' Display the colour combination for each event to be displayed '''
+
+    wait_queue( main_window, 10 )
+
     len_inst = len( instructions )
 
     ctr = 0
@@ -365,69 +458,87 @@ def device_test(main_window):
     update( main_window, 'Device Test', ctr, len_inst )
     update( main_window, '===========', ctr, len_inst )
     for instr in instructions:
-        if not static.test_devices:
+        if not state.test_devices:
             break
-        if not static.running:
+        if not state.running:
             break
 
         ctr += 1
-        manage( '{"event":"' + instr + '"}' )           # send command to devices
-        update( main_window, instr, ctr, len_inst )     # show which command
-        time.sleep(4)
+        manage( '{"event":"' + instr + '"}', main_window )
+        update( main_window, f' {instr}', ctr, len_inst )
+        time.sleep(0.5)       # slow down to allow screen to update
 
-    if static.test_devices:
+    if state.test_devices:
+        update( main_window, '', ctr, len_inst )
         main_window.update_queue.put( (main_window.device_test, () ))
-
-    update( main_window, '', ctr, len_inst )
-    update( main_window, 'Device Test Stopped', ctr, len_inst )
-    update( main_window, '===================', ctr, len_inst )
-    update( main_window, '', ctr, len_inst )
-
-
 
 def do_start(main_window):
     ''' Handle start up routines '''
-    if static.b_done_start:
+    if state.b_done_start:
         return True
-    static.running = True
+    state.running = True
 
     missing = []
 
     find_joysticks()
     for instr in instructions:
         for ins in instructions[ instr ]:
-            if not ins in static.joysticks:
+            if not ins in state.joysticks:
                 if ins not in missing:
                     missing.append( ins )
 
     if len( missing ) > 0:
         main_window.update_queue.put( (main_window.missing, missing ))
         return False
-    do_reset()
-    static.b_done_start = True
+
+    try:
+        do_reset()
+    except FileNotFoundError:        
+        update( main_window, 'Cant find VPC_LED_Control.exe',
+            count_max=1, show_counter=False )
+        return False
+        
+    state.b_done_start = True
     return True
+
+def file_check( file_filter ):
+    ''' how many files are we looking at ? '''
+    file_filter = glob.glob(
+        f"{config.config['__fPath__']}"
+        f"{edlr.LOG_FILE}{file_filter}."
+        f"{edlr.LOG_SUFFIX}" )
+    return len( file_filter ) > 0
 
 def find_joysticks():
     ''' find devices currently attached '''
     for stick in list_joysticks.list_joy_sticks():
-        static.joysticks[ stick[ 'oem_name' ] ] = stick
+        state.joysticks[ stick[ 'oem_name' ] ] = stick
 
 def follow(the_file, main_window):
     ''' generator function that yields new lines in a file '''
-    if not BTEST:
-        # seek the end of the file
+    if not state.archive_files:
         the_file.seek(0, os.SEEK_END)
 
     follow.cycle = 0
     is_reset = False
 
     # start infinite loop
-    while static.running:
-        if static.test_devices:
+    while state.running:
+        if state.block_follow:
+            time.sleep( 0.1 )
+            continue
+        if state.test_devices:
+            return
+        if state.reset or not state.running:
             return
 
         # read last line of file
-        line = the_file.readline()
+        try:
+            line = the_file.readline()
+        except UnicodeDecodeError:
+            # non recoverable, non destructive,
+            # back out and try again
+            return
 
         # sleep if file hasn't been updated
         if line:
@@ -440,29 +551,38 @@ def follow(the_file, main_window):
             if follow.cycle > config.config[ "resetTime" ]:
                 is_reset = do_reset()
 
-        if follow.cycle > config.config[ 'timeOut' ]: # 60:  we have had a minute of inaction
-            return                              #  - maybe we need a different file?
+        if follow.cycle > config.config[ 'timeOut' ]:
+            #  - maybe we need a different file?
+            return
 
-        if static.running:
+        if state.archive_files:
+            # no point waiting for new data
+            return
+
+        if state.running and not state.reset:
+            # give the_file a chance to gain more lines
             time.sleep(config.config[ 'sleepTime' ])
         else:
             return
 
         follow.cycle += config.config[ 'sleepTime' ]
-        refresh = config.config[ "timeOut" ]- follow.cycle + config.config[ "sleepTime" ]
-        if refresh >= 0:
-            txt = f'Scanning ED {edlr.LOG_FILE} files '
+        refresh = ( config.config[ "timeOut" ] -
+                    follow.cycle +
+                    config.config[ "sleepTime" ] )
+        txt = f'Scanning ED {edlr.LOG_FILE} files'
+        if refresh > 0:
             txt = f'{txt} (file refreshes in {refresh}s if no new events)'
-        else:
-            txt = f'Scanning ED {edlr.LOG_FILE} files'
-        update( main_window, txt, 0, 1, False )      #, instr, ctr, len_inst )
+        update( main_window, txt, 0, 1, False )
 
-def make_button(frm, text, command, side=tk.LEFT):
+def make_button(frm, text, command, side=tk.LEFT, tooltip=''):
     ''' Make a simple button '''
     button = tk.Button(frm,
               text=f' {text} ',
               command=command )
     button.pack(side=side)
+
+    if len( tooltip ) > 0:
+        ttips.Create( button, tooltip, bgcol='#eeeeee' )
     return button
 
 def make_menu( menu, menulist ):
@@ -477,26 +597,38 @@ def make_menu( menu, menulist ):
         else:
             if item == item.lower():
                 make_string( item, master=master )
-                label = static.labels[ item ].get()
+                label = state.labels[ item ].get()
             else:
                 label = item
             menu.add_command(label=label, command=menulist[ item ])
 
-def manage( line ):
-    ''' with a line from the game log, arrange to send colour instructions to devices '''
+def manage( line, window=None, file_name='' ):
+    ''' with a line from the game log, arrange to
+        send colour instructions to devices '''
     try:
         data = json.loads(line)
-    except json.decoder.JSONDecodeError:
-        # I'm getting an intermittent error here - need to see the cause
-        print( line )
+    except json.decoder.JSONDecodeError as error:
+        # I get an intermittent error here - need to see the cause
+        edlr.log( f'{os.path.basename(__file__)} v{VERSION}', 'manage', f'{error}\n\t{line}' )
         return
 
     if data[ "event" ] in instructions:
         for k in instructions[ data [ "event" ] ]:
-            if BTEST:
+            if state.archive_files  and window is not None:
+                wait_queue( window, 60 )
+            if TEST:
                 print( f'{k}: -> {instructions[ data [ "event" ] ][ k ]}' )
-            print( f'{k}: -> {instructions[ data [ "event" ] ][ k ]}' )
             do_colour( k, cmd=instructions[ data [ 'event' ] ][ k ])
+
+        if state.archive_files and window is not None:
+            len_instns = len(instructions[ data [ "event" ] ])
+            if len_instns > 1:
+                ses = 's'
+            else:
+                ses = ''
+            txt = f'{data["event"]} has {len_instns} instruction{ses}'
+            txt = f'{file_name} {txt}'
+            update( window, txt, counter=0, count_max=1, show_counter=False )
 
 def random_colour( colour_list=None ):
     ''' Generate random colour codes '''
@@ -510,7 +642,6 @@ def random_colour( colour_list=None ):
 
 def config():
     ''' Read configuration file, and store values in memory '''
-
     config_file = open(f"{edlr.CONFIG_FILE}","r")
 
     for line in config_file:
@@ -522,7 +653,7 @@ def config():
             for device in config.config[ 'devices' ]:
                 if not 'cmdCount' in config.config[ "devices" ][ device ]:
                     config.config[ "devices" ][ device ][ 'cmdCount' ] = 1
-            if BTEST:
+            if TEST:
                 print( f'config: {config.config}' )
         if not 'Interest' in data:
             continue
@@ -573,13 +704,23 @@ def config():
     for path in ('fPath', 'pathToLEDControl'):
         set_path( path )
 
-    if BTEST:
+    if TEST:
         for event in instructions:
             print( f'Event {event}: {instructions[ event ]}' )
 
+    config_file.close()
+
 def make_string( key, master ):
     ''' make a string varaiable '''
-    static.labels[ key ] = edlr.make_string( key, master )
+    state.labels[ key ] = edlr.make_string( key, master )
+
+def set_filter( args=None ):
+    ''' set/re-set the file filters used when searching for files '''
+    if args is not None:
+        (window, file_filter) = args
+        state.file_filter = file_filter
+        set_state_reset( True )
+        window.reset_title()
 
 def set_path( path_key ):
     '''
@@ -600,63 +741,83 @@ def set_path( path_key ):
         config.config[ new_key ] = path
 
 def update( window, txt, counter=0, count_max=0, show_counter=True ):
-    '''
-    Refresh window (while it is there)
-    '''
-    # try:
-    window.update_queue.put( (window.update, ( txt, counter, count_max, show_counter ) ))
-    # except tk.TclError:
-    #    static.running = False
+    ''' Refresh window (while it is there) '''
+
+    wait_queue( window, timeout=5 )
+
+    if window.update_queue.qsize() < 20:
+        window.update_queue.put( (window.update,
+                                  ( txt,
+                                    counter,
+                                    count_max,
+                                    show_counter ) ))
 
 def threaded_function(main_window):
-    '''
-    Heart beat of the main process:
+    ''' Heart beat of the main process:
         Keeps checking the log files,
         and sending commands to joy sticks
     '''
 
-    config()
-    read_logs = do_start(main_window)
-    if not read_logs:
-        return
-    ## main.window.button_skip()
-    ## if read_logs:
-    ##    main.window.set_title( 'Scanning ED Logs' )
-    while static.running:
-        if static.test_devices:
-            device_test(main_window)
+    if do_start(main_window):
+        while state.running:
+            if state.test_devices:
+                device_test(main_window)
 
-        log_file_list = sorted( glob.glob(f"{config.config['__fPath__']}"
-                                          f"{edlr.LOG_FILE}"
-                                          f"{edlr.LOG_SUFFIX}"
-                                          ))
-        if len( log_file_list ) == 0:
-            messagebox.showinfo(
-                master=main_window.window,
-                title=f'{PROG_NAME} Warning',
-                message='No Elite Dangerous log files were found\nPlease check your file path')
-            main_window.update_queue.put( (main_window.stop, () ))
+            set_state_reset( False )
+            log_file_list = sorted(
+                glob.glob( f"{config.config['__fPath__']}"
+                           f"{edlr.LOG_FILE}{state.file_filter}."
+                           f"{edlr.LOG_SUFFIX}" ),key=os.path.getmtime)
+            if len( log_file_list ):
+                if not state.archive_files:
+                    log_file_list = [ log_file_list[-1] ]
+                for file_path in log_file_list:
+                    if state.reset or not state.running:
+                        break
+                    read_file( main_window, file_path )
+                if state.running and not state.archive_files:
+                    time.sleep(config.config[ 'sleepTime' ])
+            else:
+                messagebox.showinfo(
+                    master=main_window.window,
+                    title=f'{PROG_NAME} Warning',
+                    message=( 'No Elite Dangerous log files were found\n'
+                              'Please check your file path') )
+                main_window.update_queue.put( (main_window.stop, () ))
+                break
+
+def read_file( main_window, file_path ):
+    ''' read one log file, and react to the events recorded '''
+    wait_queue( main_window, timeout=10 )
+
+    file_name = file_path.split('\\' )[ -1 ].split('/' )[ -1 ]
+    update( main_window, f'{datetime.now().strftime("%Y-%m-%d %H:%M")}\nChecking {file_name}',
+            count_max=1, show_counter=False )
+
+    log_file = open(file_path,"r")
+    log_lines = follow(log_file, main_window)
+    for line in log_lines:
+        if state.reset or not state.running:
             break
+        manage(line, main_window, f'{file_name}:')
+    log_file.close()
 
-        file_path = f"{log_file_list[ -1 ]}"
-        file_name = file_path.split('\\' )[ -1 ].split('/' )[ -1 ]
-        update( main_window, f'Checking {file_name}', count_max=1, show_counter=False )
+def wait_queue( window, timeout=10 ):
+    ''' help improve screen responces by giving
+        the message queue a chance to clear down '''
+    sleeper = 0.2
+    counter = int (timeout / sleeper )
+    while window.qsize() and counter > 0:
+        time.sleep( sleeper )
+        counter -= 1
 
-        log_file = open(file_path,"r")
-        log_lines = follow(log_file, main_window)
-        for line in log_lines:
-            manage(line)
-        log_file.close()
-
-        if static.running:
-            if RTEST:
-                print( f'sleep {config.config[ "sleepTime" ]}' )
-            time.sleep(config.config[ 'sleepTime' ])
 
 def main():
     ''' Main process '''
+    config()
     Window()
-    # edlr.unused()
+    if TEST:
+        edlr.unused()
 
 if __name__ == '__main__':
     main()

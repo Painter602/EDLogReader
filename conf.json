@@ -1,9 +1,10 @@
-{"Config": {"language": "en", "pathToLEDControl": "Path/to/VPC_LED_Control.exe", "fPath":"%HOMEPATH%/Saved Games/Frontier Developments/Elite Dangerous/", "sleepTime": 5, "timeOut": 60, "timedeltaMs": 500, "resetTime": 10, "devices": {"LEFT VPC Stick WarBRD": {"id": "3344 80CC"}, "RIGHT VPC Stick WarBRD": {"id": "3344 40CC", "cmdCount": 6}}}}
+{"Config": {"language": "en", "pathToLEDControl": "path/to/VPC_LED_Control.exe", "fPath":"%HOMEPATH%/Saved Games/Frontier Developments/Elite Dangerous/", "sleepTime": 5, "timeOut": 60, "timedeltaMs": 500, "resetTime": 10, "devices": {"LEFT VPC Stick WarBRD": {"id": "3344 80CC"}, "RIGHT VPC Stick WarBRD": {"id": "3344 40CC", "cmdCount": 6}}}}
 {"Comment": "Config" }
 {"Comment": "language           reserved for internationalisation" }
 {"Comment": "pathToLEDControl   path to VPC_LED_Control.exe (include the program name - VPC_LED_Control.exe)" }
 {"Comment": "fPath              path to your Elite Dangerous journal files" }
 {"Comment": "sleepTime, timeOut, timedeltaMs and resetTime" }
+{"Comment": "timedeltaMs        used to prevent too many colour changes being sent too quickly, your device can get out of sync otherwise" }
 {"Comment": "                   timing values" }
 {"Comment": "devices            a list of VPC devices together with their id (the id from VPC Setup tool)" }
 {"Comment": "                   Note: this is tested with Left and Right Alpha sticks, throttles" }

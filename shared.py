@@ -29,6 +29,7 @@ import json
 import os
 import sys
 import tkinter as tk
+from tkinter import messagebox
 from datetime import datetime
 
 def in_args( *args ):
@@ -44,54 +45,56 @@ def in_args( *args ):
         ret = ret or f'{flag}s' in (x.lower() for x in sys.argv)
     return ret
 
-BTEST = in_args( '/t', '-t', 't', 'test')
-DEVICE_TEST = in_args( '/d', '-d', 'd', 'device')
+TEST = in_args( '/t', '-t', 't', 'test')
+# DEVICE_TEST = in_args( '/d', '-d', 'd', 'device')
 
-COLOURS = ["00", "40", "80", "FF"]              # colours available on Virpil devices
-CONFIG_FILE = "conf.json"
+COLOURS         = ["00", "40", "80", "FF"]              # colours available on Virpil devices
+CONFIG_FILE     = "conf.json"
 DEFAULT_COMMAND = 1                             # default command
-LOG_FILE = "Journal"
-LOG_FILTER = ['', 'Alpha', 'Beta', 'Gamma' ]    # Gamma release very rare/never used?
-LOG_SUFFIX = "*.log"
-LANG_FILE = "lang.$.json"
-LANG_FILE_NAME = LANG_FILE.replace("$", "*")
-PROG_NAME =         sys.argv[0].split('\\')[-1].split('.')[0]
-RTEST = in_args( '/r', '-r', 'r', 'running-test', '/t', '-t', 't', 'test')
-SHOW_HELP =  'help' in (x.lower() for x in sys.argv) or '/h' in (x.lower() for x in sys.argv)
+LANG_FILE       = "lang.$.json"
+LANG_FILE_NAME  = LANG_FILE.replace("$", "*")
+LOG_FILE        = "Journal"
+LOG_FILTER      = ['*', '', 'Alpha', 'Beta', 'Gamma' ]    # Gamma release very rare/never used?
+LOG_SUFFIX      = "*.log"
+PROG_NAME       = sys.argv[0].split('\\')[-1].split('.')[0]
+SHOW_HELP       =  'help' in (x.lower() for x in sys.argv) or '/h' in (x.lower() for x in sys.argv)
 
-config = []
-instructions = {}
-language = 'en'
-PLACES = 2
+config          = []
+instructions    = {}
+language        = 'en'
+
+VERSION         =   '0.01a'                 # version numbers will probably slip
 
 def expand_commands(jsn_txt):
     '''
     expand commands
     '''
+    places          = 2
     commands= []
     for line in jsn_txt[ 'commands' ]:
         if len( line ) == 1:
             commands.append( line[ 0 ] )
         else:
-            e_num = 1
+            e_num = 0
             for d_num in range( line[ 1 ], line[ 2 ]+1 ):
-                d_str = f"{('0' * PLACES)}{d_num}"[-PLACES:]
-                e_str = f"{('0' * PLACES)}{e_num}"[-PLACES:]
+                e_num += 1
+                d_str = f"{('0' * places)}{d_num}"[-places:]
+                e_str = f"{('0' * places)}{e_num}"[-places:]
                 commands.append( line[ 0 ].replace( '{d}', d_str).replace( '{e}', e_str) )
-    if BTEST:
+    if TEST:
         for cmd in commands:
             print(cmd)
     return commands
 
-def error( module, function, txt ):
+def log( module, function, txt ):
     ''' Write errors to a log file, to help track them '''
-    error_file = open( f'{PROG_NAME}.log', 'a', encoding="utf-8" )
-    error_file.write(   f'{datetime.utcnow()} UTC\t'
+    log_file = open( f'{PROG_NAME}.log', 'a', encoding="utf-8" )
+    log_file.write(   f'{datetime.utcnow()} UTC\t'
                         f'{os.path.splitext(module)[ 0 ]} . '
                         f'{function}\t\t{txt}\n' )
-    error_file.flush()
-    os.fsync(error_file.fileno())
-    error_file.close()
+    log_file.flush()
+    os.fsync(log_file.fileno())
+    log_file.close()
 
 def load_languages():
     '''
@@ -101,9 +104,18 @@ def load_languages():
     languages = {}
 
     lang_file_list = sorted( glob.glob(f"{LANG_FILE_NAME}") )
+    if len( lang_file_list ) == 0:
+        timeout( 'No language files found' )
+
+    found_en = False
+    for fname in lang_file_list:
+        if fname == 'lang.en.json':
+            found_en = True
+    if not found_en:
+        timeout( 'We need file lang.en.json' )
 
     for file_name in lang_file_list:
-        if BTEST:
+        if TEST:
             print( file_name )
         try:
             lang_file = open(file_name,"r", encoding="utf-8")
@@ -115,9 +127,6 @@ def load_languages():
         jsn_txt = json.loads( txt )
         jsn_txt[ 'commands' ] = expand_commands( jsn_txt )
         languages[ jsn_txt[ 'code' ]] = jsn_txt
-        # translate.unused[ jsn_txt[ 'code' ]] = jsn_txt
-        if BTEST:
-            print(languages[ jsn_txt[ 'code' ]])
     return languages
 
 def main():
@@ -141,6 +150,13 @@ def make_string(txt, master=None ):
     tlate.set( translate(txt, language ) )
     return tlate
 
+def timeout( message ):
+    ''' show a warning before closing the script '''
+    win = tk.Tk()
+    messagebox.showerror( "Error", message, master=win )
+    win.destroy()
+    sys.exit(0)
+
 def translate( txt, lang=language ):
     ''' take a lookup key (txt), and provide a translation
         in language lang, or English, or default to txt '''
@@ -152,13 +168,15 @@ def translate( txt, lang=language ):
     if txt in translate.languages[ lang ]:
         return translate.languages[ lang ][ txt ]
 
-    # note errors and missing translations
+    # note missing translations
     if lang not in translate.missing:
         translate.missing[ lang ] = []
-    # and record it in the error log (without duplication - at least, for this run)
+    # and record it in the log (without duplication - at least, for this run)
     if not txt in translate.missing[ lang ]:
         translate.missing[ lang ].append( txt )
-        error( os.path.basename(__file__), 'translate', f'translation missing ({lang}): {txt}' )
+        log( f'{os.path.basename(__file__)} v{VERSION}',
+             'translate',
+             f'translation missing ({lang}): {txt}' )
 
     if lang != 'en':
         return translate( txt, lang='en' )
@@ -170,10 +188,8 @@ translate.languages = load_languages()
 
 def unused():
     ''' list unused translations '''
-    return
-    print( translate.unused )
     for not_used in translate.unused:
-        print( f'{not_used}: {translate.unused[not_used]}' )
+        log( f'{os.path.basename(__file__)} v{VERSION}', 'unused', f'{translate.unused[not_used]}' )
 
 if __name__ == '__main__':
     main()
