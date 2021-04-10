@@ -40,11 +40,6 @@ Set the path to your VPC_LED_Control.exe file - this will vary from system to sy
 
 Make sure the device names and id correspond to your devices, check with your VPC Configuration Tool.
 
-## Run time / Command line parameters
- 	/h or help   - show this help
-	
-	/d or device - open a window and test devices before reading the game log
-
 ## Trouble shooting
 1) The VPC_LED_Control.exe should be the same version as the VPC Configuration Tool used to configure your device.
 
