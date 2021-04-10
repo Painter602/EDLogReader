@@ -1,5 +1,12 @@
 # ED Log Reader
 ## Change log
+### 10 Apr 2021
+Added ability to scroll output text widget.  The widget is lilited to 500 lines
+Added a pause button.
+Bug fixes
+
+To-do: switching to (or from) the display devices mode is slow.
+
 ### 9 Apr 2021
 Rearranged buttons, and added tool-tips.
 Lots of bugs chased down and removed.
