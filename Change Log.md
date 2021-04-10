@@ -9,6 +9,9 @@ Bug fixes
 
 To-do: switching to (or from) the display devices mode is slow.
 
+#### 0.02
+Small change to the way config files are loaded
+
 ### 9 Apr 2021
 Rearranged buttons, and added tool-tips.
 Lots of bugs chased down and removed.
