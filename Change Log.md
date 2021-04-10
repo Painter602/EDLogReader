@@ -1,8 +1,10 @@
 # ED Log Reader
 ## Change log
 ### 10 Apr 2021
-Added ability to scroll output text widget.  The widget is lilited to 500 lines
-Added a pause button.
+Added ability to scroll output text widget.  The widget is limited to 500 lines.
+
+Added a pause button.  Pausing the feed changes to colour of the output text widget as a clue to the chjanged state.
+
 Bug fixes
 
 To-do: switching to (or from) the display devices mode is slow.
