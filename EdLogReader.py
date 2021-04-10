@@ -49,10 +49,11 @@ ABOUT = ('About '+ PROG_NAME + '\n\n'
          'Thank-you to Fixitman for testing and for his change suggestions'
          )
 
-TEST           =   edlr.TEST
+TEST            =   edlr.TEST
 COLOURS         =   edlr.COLOURS            # colour values
 DEFAULT_COMMAND =   edlr.DEFAULT_COMMAND    # default command
 VERSION         =   '0.01a'                 # version numbers will probably slip
+MAX_LINES       =   500
 
 HELP = ( PROG_NAME + ' Help\n'
          '==============\n'
@@ -78,16 +79,349 @@ def state():
 state.archive_files = False
 state.b_done_start  = False
 state.block_follow  = False
+state.file_filter   = edlr.LOG_FILTER[ 0 ]
 state.joysticks     = {}
 state.queue_ms      = 50
+state.labels        = {}
+state.last_txt      = ''
+state.pause         = False
+state.reset         = False
 state.running       = False
 state.skip_test     = False
 state.test_devices  = False
-state.labels        = {}
-state.last_txt      = ''
-state.file_filter   = edlr.LOG_FILTER[ 0 ]
-state.reset         = False
-state.ticker        = 0
+
+########################################################################
+class Window:
+    ''' A window to show events and warnings, primarily in the early stages of the script '''
+    def __init__(self):
+        self.window = tk.Tk()
+        self.window.title(f'{PROG_NAME}')
+        self.menu()
+        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
+        make_string( ['pause','resume'], master=get_master( self.menu_bar ) )
+        self.make_frames()
+        self.window.minsize(600, 425)
+        self.set_queue()
+
+        self.stop_update = False
+        self.in_update = False
+        self.next_update = datetime(1900, 1, 1)     # initialising, first run this session
+
+        thread = Thread(target = partial(threaded_function, self))
+        thread.daemon = True
+        thread.start()
+        self.reset_title()
+
+        self.window.mainloop()
+        state.running = False
+        thread.join()
+
+    def archive_files( self ):
+        ''' toggle read archived log files '''
+        # prevent true double presses
+        self.skip_button[ 'state' ] = tk.DISABLED
+        self.history_button[ 'state' ] = tk.DISABLED
+
+        state.archive_files = not state.archive_files
+        wait_queue( self, 60 )
+        if state.archive_files:
+            # self.skip_button[ 'state' ] = tk.DISABLED
+            self.history_button[ 'relief' ] = tk.SUNKEN
+            self.update( 'Start reading older logs', 0, -1 )
+            wait_queue( self, timeout=10 )
+            self.reset_title()
+        else:
+            self.history_button[ 'relief' ] = tk.RAISED
+            self.update( 'Start reading current log', 0, -1 )
+            wait_queue( self, timeout=10 )
+            self.reset_title()
+            self.skip_button[ 'state' ] = tk.NORMAL
+        set_state_reset( True )
+        # allow ro run now
+        time.sleep( 0.5 )   # adsorb (some) key bounces
+        self.history_button[ 'state' ] = tk.NORMAL
+
+    def button_skip(self):
+        ''' Stop processing, and (if possible) disable the button to do this '''
+        state.skip_test = True
+        try:
+            self.skip_button['state'] = tk.DISABLED
+        except tk.TclError:
+            pass
+
+    def device_test(self):
+        ''' toggle request to test devices '''
+        # prevent true double presses
+        self.skip_button[ 'state' ] = tk.DISABLED
+        self.history_button[ 'state' ] = tk.DISABLED
+
+        state.test_devices = not state.test_devices
+        wait_queue( self, 60 )
+        if state.test_devices:
+            # self.history_button[ 'state' ] = tk.DISABLED
+            self.skip_button[ 'relief' ] = tk.SUNKEN
+            update( self, 'Device test will start in a few seconds', 0, -1 )
+            wait_queue( self, timeout=10 )
+            self.set_title( "Testing Devices" )
+        else:
+            self.skip_button[ 'relief' ] = tk.RAISED
+            update( self, 'Device test will stop in a few seconds', 0, -1 )
+            wait_queue( self, timeout=10 )
+            self.reset_title()
+            self.history_button[ 'state' ] = tk.NORMAL
+        # allow ro run now
+        self.skip_button[ 'state' ] = tk.NORMAL
+
+    def make_frames(self):
+        ''' build the windows (and buttons) used '''
+        self.title = tk.Label( master=self.window, text="Loading")
+        self.title.pack()
+        tfrm = tk.Frame(master=self.window, padx=10)
+        self.scroll = tk.Scrollbar( tfrm )
+        self.tbx = tk.Text(tfrm, width=70, height=20, padx=5, pady=20) #  height=20,
+        self.scroll.pack( side=tk.RIGHT, fill=tk.Y, expand=True)
+        self.tbx.pack(fill=tk.BOTH, expand=True)
+        tfrm.pack(fill=tk.BOTH, expand=True)
+        self.scroll.config( command=self.tbx.yview )
+        self.tbx.config( yscrollcommand=self.scroll.set )
+
+        frm_btm = tk.Frame(master=self.window, padx=10, bd=5)
+        self.lbl = tk.Label( self.window, text="Command    of    ", anchor='w', padx=10)
+        self.lbl.pack(fill=tk.X, side=tk.LEFT, expand=True)
+
+        bfrm = tk.Frame(frm_btm, bd=5)
+        lbl = tk.Label( self.window, text="Test buttons:", anchor='e')
+        lbl.pack(side=tk.LEFT)
+        self.skip_button = make_button( bfrm,    " Device Test ",
+                                        self.device_test,
+                                        tooltip='Just your devices,\nignoring your log files' )
+        self.history_button = make_button(
+                bfrm,
+                "Use Old Files",
+                self.archive_files,
+                tooltip=( 'Test devices by reading your old log files.\n'
+                          'Note: events are much closer in time with\n'
+                          'this test, and there is more output so processing\n'
+                          'has been slowed down' ) )
+        self.btn_pause = make_button(  bfrm,
+                                       state.labels[ 'pause' ],
+                                       self.pause,
+                                       tooltip = 'Pause / Resume' )
+        # reserve width to show the label
+        self.btn_pause[ 'width' ] = len( state.labels[ 'pause' ].get() )
+        # but show the pause option
+        state.labels[ 'pause' ].set( edlr.translate( 'pause' ) )
+        bfrm.pack(fill=tk.X)
+
+        frm_btm.pack(side=tk.BOTTOM, fill=tk.X)
+
+    def menu(self):
+        ''' create menus '''
+        window = self.window
+        self.menu_bar = tk.Menu( master=window )
+
+        file_menu = tk.Menu(self.menu_bar, tearoff=0)
+        menu_list = {}
+        for file_filter in edlr.LOG_FILTER:
+            if file_filter == '':
+                label = 'live_game'
+            elif file_filter == '*':
+                label = 'latest_default'
+            else:
+                if not file_check( file_filter ):
+                    continue
+                label = file_filter
+            menu_list[ label ] = partial(set_filter, (self, file_filter))
+        menu_list[ 'none' ] = None
+        menu_list[ 'Exit' ] = self.stop
+        make_menu( file_menu, menu_list )
+        make_string( 'file', window )
+        self.menu_bar.add_cascade(label=state.labels[ 'file' ].get(), menu=file_menu, underline=0)
+
+        help_menu = tk.Menu(self.menu_bar, tearoff=0)
+        menu_list = {   'help': partial( help_mssg, (window, 'help', HELP)),
+                        'license': partial( help_mssg, (window, 'license', LICENSE )),
+                        'about': partial( help_mssg, (window, 'about', ABOUT)) }
+        make_menu( help_menu, menu_list )
+        make_string( 'help', window )
+        self.menu_bar.add_cascade(label=state.labels[ 'help' ].get(), menu=help_menu, underline=0)
+
+        window.config( menu=self.menu_bar )
+
+    def missing(self, missing ):
+        ''' display missing/unconnected devices '''
+        if len( missing ):
+            mssg_top    = [" ",
+                           "Devices are Missing:",
+                           "====================",
+                           ""]
+            mssg_bottom = ["", "",
+                           "This may be caused by:",
+                           "",
+                           "The config file may have changed,",
+                           "   or become corrupted", "",
+                           "Or a device may be unplugged -",
+                           "    check your devices",
+                           "",
+                           "This program will end", "when the window closes",
+                           ""]
+            len_inst = len( missing ) + len( mssg_top ) + len( mssg_bottom )
+            ctr = 0
+            for mssg in mssg_top:
+                ctr += 1
+                self.update( mssg, ctr, len_inst, False )
+            for missed in missing:
+                ctr += 1
+                self.update( f'   {missed}', ctr, len_inst, False )
+            for mssg in mssg_bottom:
+                ctr += 1
+                self.update( mssg, ctr, len_inst, False )
+            self.tbx.config( bg="#ff0" )
+            self.tbx.master.config( bg="#000" )
+            self.button_skip()
+            sys.exit( 0 )
+
+    def on_closing( self ):
+        ''' Ensure program variables are set to reflect the lack of a window '''
+        self.stop()
+
+    def pause( self ):
+        ''' switch between paused and running '''
+        state.pause = not state.pause
+
+        if state.pause:
+            state.labels[ 'pause' ].set( edlr.translate( 'resume' ) )
+            self.tbx[ 'bg' ] = "#ffd"   # visual feed-back that our state has changed
+        else:
+            state.labels[ 'pause' ].set( edlr.translate( 'pause' ) )
+            self.tbx[ 'bg' ] = "#fff"   # normal background
+
+    def qsize( self ):
+        ''' return the current size of the update queue '''
+        return self.update_queue.qsize()
+
+    def reset_title(self, qualifier=None):
+        ''' Reset title based on the file filter '''
+        if qualifier is None:
+            if state.archive_files:
+                qualifier='Reading Old Files'
+            else:
+                qualifier='Scanning latest game file'
+        if state.file_filter == '':
+            title = f'{qualifier} - release version'
+        elif state.file_filter == '*':
+            title = qualifier
+        else:
+            title = f'{qualifier} - {state.file_filter} version'
+        self.set_title( title )
+
+    def set_queue(self):
+        ''' create a message queue, and start watching it '''
+        self.update_queue = queue.SimpleQueue()     # queue.Queue()
+        self.window.after(state.queue_ms, self.update_listen_for_result)
+
+    def set_title( self, text ):
+        ''' Set or change the message above the text box '''
+        try:
+            self.title[ 'text' ] = text
+        except tk.TclError:
+            pass
+
+    def stop( self ):
+        ''' Prepare this window to be closed, destroy the window '''
+        set_skip_test(True)
+        state.running = False
+        state.archive_files = False
+        try:
+            self.window.destroy()
+        except tk.TclError:     # likely this has been destroyed already
+            pass
+
+    def update( self, txt, counter=0, count_max=0, show_command_counter=True, warn=False):
+        ''' Update the window, by showing new text '''
+        state.block_follow = True
+        if count_max:
+            self.tbx.insert( tk.END, f'{txt}\n' )
+            lines = int(self.tbx.index('end-1c').split('.')[0])
+            if lines > MAX_LINES:
+                delete = f'{lines-MAX_LINES}.0'
+                self.tbx.delete( '1.0', delete )
+                self.tbx.insert( '1.0', '*** Earlier lines deleted ***\n' )
+            self.tbx.see(tk.END)
+
+        if warn:
+            self.warn()
+
+        if show_command_counter:
+            if count_max > 0:
+                self.lbl[ 'text' ] = f"Command {counter} of {count_max}"
+            elif count_max < 0:
+                self.lbl[ 'text' ] = ''
+            else:
+                self.lbl[ 'text' ] = txt
+        else:
+            self.lbl[ 'text' ] = ''
+
+        self.lbl.pack()
+        if state.running:
+            self.window.update()
+
+    def update_listen_for_result( self ):
+        """ Check if there is something in the queue. """
+        while state.running:
+            try:
+                (func, args) = self.update_queue.get(0)
+                state.block_follow = True
+            except queue.Empty:
+                # we didn't find anything, this is normal
+                state.block_follow = False
+                if state.running:
+                    self.window.after(state.queue_ms, self.update_listen_for_result)
+                return
+
+            #we found something
+            if func == self.update:     # the function passed in
+                ( txt, counter, count_max, show_command_counter, warn ) = args
+                self.update( txt, counter, count_max, show_command_counter, warn)
+            elif func == self.missing:  # the function passed in
+                self.missing( args )
+            else:
+                func()
+
+        self.window.after(state.queue_ms, self.update_listen_for_result)
+
+    def warn(self):
+        ''' recursivly seek all widgets and set their colours '''
+        for btn in ( self.skip_button,
+                     self.history_button,
+                     self.btn_pause ):
+            btn[ 'state' ] = tk.DISABLED
+        self._warn_down( self.window )
+        self.tbx.config( bg="#ff0", fg='#000' )
+
+    def _warn_down( self, master, level=0 ):
+        ''' recursivly seek all widgets and set their colours '''
+        if isinstance( master, str ):
+            return
+        if isinstance( master, tk.Menu ):
+            # alright, don't mess with menus
+            return
+        if isinstance( master, tk.Button ):
+            # alright, don't mess with menus
+            return
+
+        master.config( bg="#000" )
+
+        try:
+            master.config( fg='#fff' )
+        except tk.TclError:
+            # we may have a frame, with background but no foreground colour
+            pass
+
+        for child in master.winfo_children():
+            self._warn_down( child, level+1 )
+
+########################################################################
 
 def do_colour( device, cmd=None):
     '''
@@ -119,7 +453,7 @@ def do_colour( device, cmd=None):
 
         if state.running:
             subprocess.Popen( run, creationflags=subprocess.CREATE_NEW_CONSOLE )
-                           
+
     t_delta = timedelta(milliseconds=config.config[ "timedeltaMs" ])
     do_colour.next_colour_time[ device ] = now_time + t_delta
 
@@ -189,263 +523,6 @@ def stop_running():
     '''
     state.running = False
 
-class Window:
-    ''' A window to show events and warnings, primarily in the early stages of the script '''
-    lines = 0
-
-    def __init__(self):
-        # self.closing = False
-        self.window = tk.Tk()
-        self.window.title(f'{PROG_NAME}')
-        self.window.minsize(700, 430)
-        self.menu()
-        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
-        self.make_frames()
-
-        self.stop_update = False
-        self.in_update = False
-        self.next_update = datetime(1900, 1, 1)     # initialising, first run this session
-
-        self.set_queue()
-        thread = Thread(target = partial(threaded_function, self))
-        thread.daemon = True
-        thread.start()
-        self.reset_title()
-        self.window.mainloop()
-        state.running = False
-        thread.join()
-
-    def archive_files( self ):
-        ''' toggle read archived log files '''
-        state.archive_files = not state.archive_files
-        if state.archive_files:
-            self.skip_button[ 'state' ] = tk.DISABLED
-            self.history_button[ 'relief' ] = tk.SUNKEN
-            self.update( 'Start reading older logs', 0, -1 )
-            self.reset_title()
-        else:
-            self.history_button[ 'relief' ] = tk.RAISED
-            self.update( 'Start reading current log', 0, -1 )
-            self.skip_button[ 'state' ] = tk.NORMAL
-            self.reset_title()
-        set_state_reset( True )
-
-    def device_test(self):
-        ''' toggle request to test devices '''
-        state.test_devices = not state.test_devices
-        if state.test_devices:
-            self.history_button[ 'state' ] = tk.DISABLED
-            self.skip_button[ 'relief' ] = tk.SUNKEN
-            update( self, 'Device test will start in a few seconds', 0, -1 )
-            self.set_title( "Testing Devices" )
-        else:
-            self.skip_button[ 'relief' ] = tk.RAISED
-            update( self, 'Device test will stop in a few seconds', 0, -1 )
-            self.history_button[ 'state' ] = tk.NORMAL
-            self.reset_title()
-
-    def qsize( self ):
-        ''' return the current size of the update queue '''
-        return self.update_queue.qsize()
-
-    def set_queue(self):
-        ''' create a message queue, and start watching it '''
-        self.update_queue = queue.SimpleQueue()     # queue.Queue()
-        self.window.after(state.queue_ms, self.update_listen_for_result)
-
-    def make_frames(self):
-        ''' build the windows (and buttons) used '''
-        self.title = tk.Label( master=self.window, text="Loading")
-        self.title.pack()
-        tfrm = tk.Frame(master=self.window, padx=10)
-        self.tbx = tk.Text(tfrm, height=20, width=70, padx=5, pady=20)
-        self.tbx.pack(fill=tk.BOTH, expand=True)
-        tfrm.pack(fill=tk.BOTH, expand=True)
-
-        frm_btm = tk.Frame(master=self.window, padx=10, bd=5)
-        frm = tk.Frame(master=frm_btm, bd=5)
-        self.lbl = tk.Label( self.window, text="Command    of    ", anchor='w', padx=10)
-        self.lbl.pack(fill=tk.X, side=tk.LEFT, expand=True)
-        frm.pack(fill=tk.X)
-
-        bfrm = tk.Frame(frm_btm, bd=5)
-        lbl = tk.Label( self.window, text="Test buttons:", anchor='e')
-        lbl.pack(side=tk.LEFT)
-        self.skip_button = make_button( bfrm,    " Device Test ",
-                                        self.device_test,
-                                        tooltip='Just your devices,\nignoring your log files' )
-        self.history_button = make_button(  bfrm,
-                                            "Use Old Files",
-                                            self.archive_files,
-                                            tooltip=( 'Test devices by reading your old log files.\n'
-                                                      'Note: events are much closer in time with\n'
-                                                      'this test, so processing has been slowed down'
-                                                      ))
-        bfrm.pack(fill=tk.X)
-        frm_btm.pack(side=tk.BOTTOM, fill=tk.X)
-
-
-    def menu(self):
-        ''' create menus '''
-        window = self.window
-        self.menu_bar = tk.Menu( master=window )
-
-        file_menu = tk.Menu(self.menu_bar, tearoff=0)
-        menu_list = {}
-        for file_filter in edlr.LOG_FILTER:
-            if file_filter == '':
-                label = 'live_game'
-            elif file_filter == '*':
-                label = 'latest_default'
-            else:
-                if not file_check( file_filter ):
-                    continue
-                label = file_filter
-            menu_list[ label ] = partial(set_filter, (self, file_filter))
-        menu_list[ 'none' ] = None
-        menu_list[ 'Exit' ] = self.stop
-        make_menu( file_menu, menu_list )
-        make_string( 'file', window )
-        self.menu_bar.add_cascade(label=state.labels[ 'file' ].get(), menu=file_menu, underline=0)
-
-        help_menu = tk.Menu(self.menu_bar, tearoff=0)
-        menu_list = {   'help': partial( help_mssg, (window, 'help', HELP)),
-                        'license': partial( help_mssg, (window, 'license', LICENSE )),
-                        'about': partial( help_mssg, (window, 'about', ABOUT)) }
-        make_menu( help_menu, menu_list )
-        make_string( 'help', window )
-        self.menu_bar.add_cascade(label=state.labels[ 'help' ].get(), menu=help_menu, underline=0)
-
-        window.config( menu=self.menu_bar )
-
-    def missing(self, missing ):
-        ''' display missing/unconnected devices '''
-        if len( missing ):
-            mssg_top    = [" ",
-                           "Devices are Missing:",
-                           "====================",
-                           ""]
-            mssg_bottom = ["", "",
-                           "This may be caused by:",
-                           "",
-                           "The config file may have changed,",
-                           "   or become corrupted", "",
-                           "Or a device may be unplugged -",
-                           "    check your devices",
-                           "",
-                           "This program will end", "when the window closes",
-                           ""]
-            len_inst = len( missing ) + len( mssg_top ) + len( mssg_bottom )
-            ctr = 0
-            for mssg in mssg_top:
-                ctr += 1
-                self.update( mssg, ctr, len_inst, False )
-            for missed in missing:
-                ctr += 1
-                self.update( f'   {missed}', ctr, len_inst, False )
-            for mssg in mssg_bottom:
-                ctr += 1
-                self.update( mssg, ctr, len_inst, False )
-            self.tbx.config( bg="#ff0" )
-            self.tbx.master.config( bg="#000" )
-            self.button_skip()
-            sys.exit( 0 )
-
-    def button_skip(self):
-        ''' Stop processing, and (if possible) disable the button to do this '''
-        state.skip_test = True
-        try:
-            self.skip_button['state'] = tk.DISABLED
-        except tk.TclError:
-            pass
-
-    def on_closing( self ):
-        ''' Ensure program variables are set to reflect the lack of a window '''
-        self.stop()
-
-    def reset_title(self, qualifier=None):
-        ''' Reset title based on the file filter '''
-        if qualifier is None:
-            if state.archive_files:
-                qualifier='Reading Old Files'
-            else:
-                qualifier='Scanning latest game file'
-        if state.file_filter == '':
-            title = f'{qualifier} - release version'
-        elif state.file_filter == '*':
-            title = qualifier
-        else:
-            title = f'{qualifier} - {state.file_filter} version'
-        self.set_title( title )
-
-    def set_title( self, text ):
-        ''' Set or change the message above the text box '''
-        try:
-            self.title[ 'text' ] = text
-        except tk.TclError:
-            pass
-
-    def stop( self ):
-        ''' Prepare this window to be closed, destroy the window '''
-        set_skip_test(True)
-        state.running = False
-        try:
-            self.window.destroy()
-        except tk.TclError:     # likely this has been destroyed already
-            pass
-
-    def update( self, txt, counter=0, count_max=0, show_command_counter=True):
-        ''' Update the window, by showing new text '''
-        state.block_follow = True
-        if count_max:
-            txt_table = self.tbx.get("1.0", "end")
-            reset_height( self.tbx, count_max )
-            reset_width( self.tbx, len( txt ) )
-            if len( txt_table ) > 1:
-                self.tbx.insert( tk.END, '\n' )
-                self.lines += 1
-            if self.lines > self.tbx[ 'height' ]:
-                self.tbx.delete( "1.0", "2.0" )
-            self.tbx.insert( tk.END, txt )
-
-        if show_command_counter:
-            if count_max > 0:
-                self.lbl[ 'text' ] = f"Command {counter} of {count_max}"
-            elif count_max < 0:
-                self.lbl[ 'text' ] = ''
-            else:
-                self.lbl[ 'text' ] = txt
-        else:
-            self.lbl[ 'text' ] = ''
-
-        self.lbl.pack()
-        if state.running:
-            self.window.update()
-
-    def update_listen_for_result( self ):
-        """ Check if there is something in the queue. """
-        while state.running:
-            try:
-                (func, args) = self.update_queue.get(0)
-                state.block_follow = True
-            except queue.Empty:
-                # we didn't find anything, this is normal
-                state.block_follow = False
-                if state.running:
-                    self.window.after(state.queue_ms, self.update_listen_for_result)
-                return
-
-            #we found something
-            if func == self.update:     # the function passed in
-                ( txt, counter, count_max, show_command_counter ) = args
-                self.update( txt, counter, count_max, show_command_counter)
-            elif func == self.missing:  # the function passed in
-                self.missing( args )
-            else:
-                func()
-
-        self.window.after(state.queue_ms, self.update_listen_for_result)
-
 def device_test(main_window):
     ''' Display the colour combination for each event to be displayed '''
 
@@ -458,10 +535,14 @@ def device_test(main_window):
     update( main_window, 'Device Test', ctr, len_inst )
     update( main_window, '===========', ctr, len_inst )
     for instr in instructions:
-        if not state.test_devices:
+        if ( not state.test_devices or
+             not state.running ):
             break
-        if not state.running:
-            break
+        while state.pause:
+            time.sleep( 0.2 )
+            if ( not state.test_devices or
+                 not state.running ):
+                break
 
         ctr += 1
         manage( '{"event":"' + instr + '"}', main_window )
@@ -471,6 +552,16 @@ def device_test(main_window):
     if state.test_devices:
         update( main_window, '', ctr, len_inst )
         main_window.update_queue.put( (main_window.device_test, () ))
+
+def dopack( master ):
+    ''' recursively, pack a widget and its ancestors '''
+    while True:
+        if hasattr( master, 'pack' ):
+            master.pack()
+        if hasattr( master, 'master' ):
+            master = master.master
+        else:
+            break
 
 def do_start(main_window):
     ''' Handle start up routines '''
@@ -493,11 +584,12 @@ def do_start(main_window):
 
     try:
         do_reset()
-    except FileNotFoundError:        
-        update( main_window, 'Cant find VPC_LED_Control.exe',
-            count_max=1, show_counter=False )
+    except FileNotFoundError:
+        update( main_window, ( '    Cant find VPC_LED_Control.exe\n\n'
+                               '    Hint: Check pathToLEDControl in config.json'),
+            count_max=1, show_counter=False, warn=True )
         return False
-        
+
     state.b_done_start = True
     return True
 
@@ -524,7 +616,7 @@ def follow(the_file, main_window):
 
     # start infinite loop
     while state.running:
-        if state.block_follow:
+        if state.block_follow or state.pause:
             time.sleep( 0.1 )
             continue
         if state.test_devices:
@@ -574,11 +666,21 @@ def follow(the_file, main_window):
             txt = f'{txt} (file refreshes in {refresh}s if no new events)'
         update( main_window, txt, 0, 1, False )
 
+def get_master( master ):
+    while hasattr( master, 'master' ):
+        master = master.master
+    return master
+
 def make_button(frm, text, command, side=tk.LEFT, tooltip=''):
     ''' Make a simple button '''
-    button = tk.Button(frm,
-              text=f' {text} ',
-              command=command )
+    if isinstance(text, tk.StringVar):
+        button = tk.Button(frm,
+                           textvariable=text,
+                           command=command )
+    else:
+        button = tk.Button(frm,
+                           text=f' {text} ',
+                           command=command )
     button.pack(side=side)
 
     if len( tooltip ) > 0:
@@ -587,9 +689,9 @@ def make_button(frm, text, command, side=tk.LEFT, tooltip=''):
 
 def make_menu( menu, menulist ):
     ''' make a drop down menu list '''
-    master = menu
-    while hasattr( master, 'master'):
-        master = master.master
+    master = get_master( menu )
+    # while hasattr( master, 'master'):
+    #    master = master.master
 
     for item in menulist:
         if menulist[ item ] is None:
@@ -712,6 +814,18 @@ def config():
 
 def make_string( key, master ):
     ''' make a string varaiable '''
+    if isinstance( key, list ):
+        str_id = ''
+        str_res = ''
+        for item in key:
+            if len( str_id ) == 0:
+                str_id = item
+            str_test = edlr.translate( item )
+            if len( str_res ) < len( str_test ):
+                str_res = str_test
+        state.labels[ str_id ] = edlr.make_string( str_id, master )
+        state.labels[ str_id ].set( str_res )
+        return 
     state.labels[ key ] = edlr.make_string( key, master )
 
 def set_filter( args=None ):
@@ -740,7 +854,7 @@ def set_path( path_key ):
                     path += term
         config.config[ new_key ] = path
 
-def update( window, txt, counter=0, count_max=0, show_counter=True ):
+def update( window, txt, counter=0, count_max=0, show_counter=True, warn=False ):
     ''' Refresh window (while it is there) '''
 
     wait_queue( window, timeout=5 )
@@ -750,7 +864,8 @@ def update( window, txt, counter=0, count_max=0, show_counter=True ):
                                   ( txt,
                                     counter,
                                     count_max,
-                                    show_counter ) ))
+                                    show_counter,
+                                    warn) ))
 
 def threaded_function(main_window):
     ''' Heart beat of the main process:
@@ -818,6 +933,7 @@ def main():
     Window()
     if TEST:
         edlr.unused()
+    sys.exit(0)
 
 if __name__ == '__main__':
     main()
