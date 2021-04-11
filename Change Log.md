@@ -1,5 +1,9 @@
 # ED Log Reader
 ## Change log
+## 2021
+### 11 Apr
+Removed two print statements
+
 ### 10 Apr 2021
 Added ability to scroll output text widget.  The widget is limited to 500 lines.
 
