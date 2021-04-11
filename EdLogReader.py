@@ -758,7 +758,6 @@ def config():
         if 'Config' in data:
             for key in data[ 'Config' ]:
                 config.config[ key ] = data[ 'Config' ][ key ]
-                print( f'{key}: {config.config[ key ]}' )
 
     config_file.close()
 
@@ -771,7 +770,6 @@ def config():
 
 def config_load(file):
     ''' Read configuration file, and store values in memory '''
-    print( file )
     config_file = open(file,"r")
 
     for line in config_file:
