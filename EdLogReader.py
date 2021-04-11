@@ -743,8 +743,34 @@ def random_colour( colour_list=None ):
              'Blue': random.choice(colour_list)}
 
 def config():
+    ''' Read configuration file, and any over-riding items in a local sub-folder '''
+    config_load( f"{edlr.CONFIG_FILE}" )
+
+    try:
+        # see if there is a config file in a local sub-folder
+        config_file = open( f"local/{edlr.CONFIG_FILE}","r")
+    except FileNotFoundError:
+        return
+
+    # if found, add to, or over ride (some of) the main config information
+    for line in config_file:
+        data = json.loads(line)
+        if 'Config' in data:
+            for key in data[ 'Config' ]:
+                config.config[ key ] = data[ 'Config' ][ key ]
+
+    config_file.close()
+
+    for path in ('fPath', 'pathToLEDControl'):
+        set_path( path )
+
+    if TEST:
+        for event in instructions:
+            print( f'Event {event}: {instructions[ event ]}' )
+
+def config_load(file):
     ''' Read configuration file, and store values in memory '''
-    config_file = open(f"{edlr.CONFIG_FILE}","r")
+    config_file = open(file,"r")
 
     for line in config_file:
         data = json.loads(line)
@@ -802,13 +828,6 @@ def config():
                 else:
                     actions[ key ][ data_list[ 'cmd' ] ] = data_list
         instructions[ data[ 'Event' ] ] = actions
-
-    for path in ('fPath', 'pathToLEDControl'):
-        set_path( path )
-
-    if TEST:
-        for event in instructions:
-            print( f'Event {event}: {instructions[ event ]}' )
 
     config_file.close()
 
@@ -933,7 +952,6 @@ def main():
     Window()
     if TEST:
         edlr.unused()
-    sys.exit(0)
 
 if __name__ == '__main__':
     main()
