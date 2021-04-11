@@ -52,7 +52,9 @@ ABOUT = ('About '+ PROG_NAME + '\n\n'
 TEST            =   edlr.TEST
 COLOURS         =   edlr.COLOURS            # colour values
 DEFAULT_COMMAND =   edlr.DEFAULT_COMMAND    # default command
-VERSION         =   '0.01a'                 # version numbers will probably slip
+VERSION         =   '0.04.11'               # version numbers will probably slip
+                                            # jump in numbering reflects a move to date
+                                            # based versioning
 MAX_LINES       =   500
 
 HELP = ( PROG_NAME + ' Help\n'
