@@ -860,9 +860,7 @@ def config():
     if 'pathToEDJournals' not in config.config:
         if 'fPath' in config.config:            # fPath is a legacy key                      
             config.config[ 'pathToEDJournals' ] = config.config[ 'fPath' ]
-            return
         config.config[ 'pathToEDJournals' ] = '%HOMEPATH%/Saved Games/Frontier Developments/Elite Dangerous/'
-
     for path in ('pathToEDJournals', 'pathToLEDControl'):
         set_path( path )
 
