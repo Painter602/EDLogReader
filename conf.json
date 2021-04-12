@@ -1,4 +1,4 @@
-{"Config": {"language": "en", "pathToLEDControl": "path/to/VPC_LED_Control.exe", "fPath":"%HOMEPATH%/Saved Games/Frontier Developments/Elite Dangerous/", "sleepTime": 5, "timeOut": 60, "timedeltaMs": 500, "resetTime": 10, "devices": {"LEFT VPC Stick WarBRD": {"id": "3344 80CC"}, "RIGHT VPC Stick WarBRD": {"id": "3344 40CC", "cmdCount": 6}}}}
+{"Config": {"language": "en", "pathToLEDControl": "path/to/VPC_LED_Control.exe", "pathToEDJournals":"%HOMEPATH%/Saved Games/Frontier Developments/Elite Dangerous/", "sleepTime": 5, "timeOut": 60, "timedeltaMs": 500, "resetTime": 10, "devices": {"LEFT VPC Stick WarBRD": {"id": "3344 80CC"}, "RIGHT VPC Stick WarBRD": {"id": "3344 40CC", "cmdCount": 6}}}}
 {"Comment": "Config" }
 {"Comment": "language           reserved for internationalisation" }
 {"Comment": "pathToLEDControl   path to VPC_LED_Control.exe (include the program name - VPC_LED_Control.exe)" }
