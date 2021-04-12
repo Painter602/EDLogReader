@@ -58,10 +58,10 @@ ABOUT = [   ' ',
                 ),
             VERSION]
 
-TEST            =   edlr.TEST
 COLOURS         =   edlr.COLOURS            # colour values
 DEFAULT_COMMAND =   edlr.DEFAULT_COMMAND    # default command
 MAX_LINES       =   500
+TEST            = edlr.TEST
 
 HELP = ( PROG_NAME + ' Help\n'
          '==============\n'
@@ -530,8 +530,6 @@ def do_colour( device, cmd=None):
         blue    = f'{COLOURS[ cmd[ key ]["Blue"]]}'
 
         run = f"\"{config.config[ '__pathToLEDControl__' ]}\" {dev_id} {key} {red} {green} {blue}"
-        if TEST:
-            print( run )
 
         if state.running:
             # consider using subprocess.run here
@@ -815,8 +813,6 @@ def manage( line, window=None, file_name='' ):
         for k in instructions[ data [ "event" ] ]:
             if state.archive_files  and window is not None:
                 wait_queue( window, 60 )
-            if TEST:
-                print( f'{k}: -> {instructions[ data [ "event" ] ][ k ]}' )
             do_colour( k, cmd=instructions[ data [ 'event' ] ][ k ])
 
         if state.archive_files and window is not None:
@@ -843,20 +839,23 @@ def config():
     ''' Read configuration file, and any over-riding items in a local sub-folder '''
     config_load( f"{edlr.CONFIG_FILE}" )
 
+    blocal = False
     try:
         # see if there is a config file in a local sub-folder
         config_file = open( f"local/{edlr.CONFIG_FILE}","r")
+        blocal = True
     except FileNotFoundError:
-        return
+        pass
 
-    # if found, add to, or over ride (some of) the main config information
-    for line in config_file:
-        data = json.loads(line)
-        if 'Config' in data:
-            for key in data[ 'Config' ]:
-                config.config[ key ] = data[ 'Config' ][ key ]
+    if blocal:
+        # if found, add to, or over ride (some of) the main config information
+        for line in config_file:
+            data = json.loads(line)
+            if 'Config' in data:
+                for key in data[ 'Config' ]:
+                    config.config[ key ] = data[ 'Config' ][ key ]
 
-    config_file.close()
+        config_file.close()
 
     if 'pathToEDJournals' not in config.config:
         if 'fPath' in config.config:            # fPath is a legacy key                      
@@ -866,10 +865,6 @@ def config():
 
     for path in ('pathToEDJournals', 'pathToLEDControl'):
         set_path( path )
-
-    if TEST:
-        for event in instructions:
-            print( f'Event {event}: {instructions[ event ]}' )
 
 def config_load(file):
     ''' Read configuration file, and store values in memory '''
@@ -884,8 +879,6 @@ def config_load(file):
             for device in config.config[ 'devices' ]:
                 if not 'cmdCount' in config.config[ "devices" ][ device ]:
                     config.config[ "devices" ][ device ][ 'cmdCount' ] = 1
-            if TEST:
-                print( f'config: {config.config}' )
         if not 'Interest' in data:
             continue
         if data[ 'Interest' ] == 0:
@@ -964,7 +957,7 @@ def set_path( path_key ):
     '''
     new_key = f'__{path_key}__'
 
-    if not new_key in config.config:
+    if new_key not in config.config:
         path = ""
         term_list = config.config[ path_key ].split("%")
         for term in term_list:
