@@ -15,7 +15,9 @@ import time
 from threading import Thread
 import tkinter as tk
 from tkinter import messagebox
+from tkinter.font import Font
 import ttips
+import webbrowser
 
 import list_joysticks
 import shared as edlr
@@ -41,26 +43,30 @@ LICENSE = ('License:\n'
            '51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.'
            )
 
-ABOUT = ('About '+ PROG_NAME + '\n\n'
-         'Written by Painter602\n\n'
-         'For now, contact me through github (https://github.com/Painter602/EDLogReader)\n'
-         'Or message me on Virpil\'s forum\n\n'
-         'Copyright (C) 2021, Painter602\n\n'
-         'Thank-you to Fixitman for testing and for his change suggestions'
-         )
+VERSION         =   f'v0.04.11:{edlr.VERSION}'       # date based version, numbers will probably slip
 
-TEST            =   edlr.TEST
+LINK    = 'https://github.com/Painter602/EDLogReader/issues'
+
+ABOUT = [   ' ',
+            (  'About '+ PROG_NAME + '\n\n'
+               'Written by Painter602\n'
+               'If needed, you can contact me through github:'),
+            LINK,
+            (   '\n\n'
+                'Thank-you to Fixitman for testing and for his change suggestions'
+                '\n\nCopyright (C) 2021, Painter602\t\t\t'
+                ),
+            VERSION]
+
 COLOURS         =   edlr.COLOURS            # colour values
 DEFAULT_COMMAND =   edlr.DEFAULT_COMMAND    # default command
-VERSION         =   '0.04.11'               # version numbers will probably slip
-                                            # jump in numbering reflects a move to date
-                                            # based versioning
 MAX_LINES       =   500
+TEST            = edlr.TEST
 
 HELP = ( PROG_NAME + ' Help\n'
          '==============\n'
-         'You may run this script with NO parameters, and it should read your\r'
-         'Elite Dangerous log files, and respond by changing the LED colours\r'
+         'This script should read your Elite Dangerous log files, and respond'
+         'by changing the LED colours\r'
          'displayed on your Virpil Devices.\n\n'
          'Note: your configuration file may need modification before that works.\n'
          )
@@ -91,6 +97,76 @@ state.reset         = False
 state.running       = False
 state.skip_test     = False
 state.test_devices  = False
+
+
+class About():
+    def __init__(self, master=None, title='', message=None, *ret):
+        # master=window,
+        # title=f'{PROG_NAME} - {title}',
+        # message=message
+        # super().__init__( )
+        self.window = tk.Toplevel()
+        self.master=master
+        self.ret=False
+        self.window.deiconify()
+        
+        if len(title):
+            self.window.title( title )
+        elif master is not None:
+            self.window.title( master[ 'title' ] )
+
+        label = None
+        if isinstance( message, str ):
+            label = tk.Label( self.window, text=message, justify='left', padx=20, pady=20)
+            label.pack()
+            label.bind('<Double-1>', partial( webbrowser.open, f'{LINK}'))
+        elif isinstance( message, list ):
+            frm = tk.Frame(master=self.window)
+            for txt in message:
+                if txt == LINK:
+                    label = tk.Label( self.window, text=txt, justify='left')
+                    label.pack(fill=tk.X)
+                    font = Font(label, label.cget("font"))
+                    font.configure(underline = True)
+                    label.configure( font=font )
+                    label.bind('<Button-1>', partial( webbrowser.open, f'{LINK}'))
+                    ttips.Create( label, 'Click to open the link in your browser', bgcol='#fdfdfd' )
+                elif txt == VERSION:
+                    label = tk.Label( self.window, text=f'{PROG_NAME} {VERSION}', justify='right', anchor='e')
+                    label.pack(fill=tk.X, padx=20, pady=20)
+                    font = Font(label, label.cget("font"))
+                    font.configure(underline = True)
+                    label.configure( font=font )
+                    label.bind('<Button-1>', partial( self.copy ))
+                    ttips.Create( label, 'Click to copy the program\'s name to your clip-board', bgcol='#fdfdfd' )
+                else:
+                    tk.Label( self.window, text=txt, justify='left', anchor='w').pack(fill=tk.X, padx=20, pady=0)
+            frm.pack(padx=20, pady=(20,0))
+            
+        frm_btn = tk.Frame(master=self.window )
+
+        ok_btn = make_button( frm_btn,
+                              "OK",
+                              partial( self.btn_press, False),
+                              tooltip='Close this About window' )
+        # ok_btn[ 'width' ] = len( prog_name )
+        ok_btn.pack(fill=tk.BOTH)
+        frm_btn.pack(pady=( 0, 20 ))
+
+        self.window.grab_set()
+
+    def btn_press( self, value=False ):
+        self.ret = value
+        self.window.destroy()
+
+    def copy(self, event):
+        copy2clip( f'{PROG_NAME} {VERSION}')
+
+    def show(self):
+        self.window.wait_window()
+        return self.ret
+        
+    
 
 ########################################################################
 class Window:
@@ -243,7 +319,7 @@ class Window:
         help_menu = tk.Menu(self.menu_bar, tearoff=0)
         menu_list = {   'help': partial( help_mssg, (window, 'help', HELP)),
                         'license': partial( help_mssg, (window, 'license', LICENSE )),
-                        'about': partial( help_mssg, (window, 'about', ABOUT)) }
+                        'about': partial( help_about, (window, 'about', ABOUT)) }
         make_menu( help_menu, menu_list )
         make_string( 'help', window )
         self.menu_bar.add_cascade(label=state.labels[ 'help' ].get(), menu=help_menu, underline=0)
@@ -425,6 +501,10 @@ class Window:
 
 ########################################################################
 
+def copy2clip(txt):
+    cmd= f'echo {txt.strip()} |clip'
+    subprocess.run( cmd, shell=True )
+
 def do_colour( device, cmd=None):
     '''
     set colours for a device
@@ -450,11 +530,12 @@ def do_colour( device, cmd=None):
         blue    = f'{COLOURS[ cmd[ key ]["Blue"]]}'
 
         run = f"\"{config.config[ '__pathToLEDControl__' ]}\" {dev_id} {key} {red} {green} {blue}"
-        if TEST:
-            print( run )
 
         if state.running:
-            subprocess.Popen( run, creationflags=subprocess.CREATE_NEW_CONSOLE )
+            # consider using subprocess.run here
+            # https://docs.python.org/3/library/subprocess.html
+            # subprocess.Popen( run, creationflags=subprocess.CREATE_NEW_CONSOLE )
+            subprocess.run( run ) #, shell=True )
 
     t_delta = timedelta(milliseconds=config.config[ "timedeltaMs" ])
     do_colour.next_colour_time[ device ] = now_time + t_delta
@@ -466,6 +547,17 @@ def do_reset():
     manage( '{ "event":"Default" }' )
     return True
 
+def help_about( args=None ):
+    ''' Display a message in a mesage box '''
+    if args is not None:
+        (window, title, txt) = args
+        for message in range( len( txt ) ):
+            txt[ message ] = txt[ message ].replace('\r', ' ').replace('\t\\', '\t')
+
+        about = About(  master=window,
+                        title=f'{PROG_NAME} - {edlr.translate( title )}',
+                        message=txt).show()    
+
 def help_mssg( args=None):
     ''' Display a message in a mesage box '''
     if args is not None:
@@ -474,6 +566,7 @@ def help_mssg( args=None):
         messagebox.showinfo(master=window,
                             title=f'{PROG_NAME} - {title}',
                             message=message)
+
 def reset_height( ctrl, height_max, range_max=20 ):
     ''' Set the height of the text box '''
     if height_max > range_max:
@@ -598,7 +691,7 @@ def do_start(main_window):
 def file_check( file_filter ):
     ''' how many files are we looking at ? '''
     file_filter = glob.glob(
-        f"{config.config['__fPath__']}"
+        f"{config.config['__pathToEDJournals__']}"
         f"{edlr.LOG_FILE}{file_filter}."
         f"{edlr.LOG_SUFFIX}" )
     return len( file_filter ) > 0
@@ -720,8 +813,6 @@ def manage( line, window=None, file_name='' ):
         for k in instructions[ data [ "event" ] ]:
             if state.archive_files  and window is not None:
                 wait_queue( window, 60 )
-            if TEST:
-                print( f'{k}: -> {instructions[ data [ "event" ] ][ k ]}' )
             do_colour( k, cmd=instructions[ data [ 'event' ] ][ k ])
 
         if state.archive_files and window is not None:
@@ -731,7 +822,7 @@ def manage( line, window=None, file_name='' ):
             else:
                 ses = ''
             txt = f'{data["event"]} has {len_instns} instruction{ses}'
-            txt = f'{file_name} {txt}'
+            txt = f'{data["timestamp"]} {txt}'
             update( window, txt, counter=0, count_max=1, show_counter=False )
 
 def random_colour( colour_list=None ):
@@ -748,27 +839,32 @@ def config():
     ''' Read configuration file, and any over-riding items in a local sub-folder '''
     config_load( f"{edlr.CONFIG_FILE}" )
 
+    blocal = False
     try:
         # see if there is a config file in a local sub-folder
         config_file = open( f"local/{edlr.CONFIG_FILE}","r")
+        blocal = True
     except FileNotFoundError:
-        return
+        pass
 
-    # if found, add to, or over ride (some of) the main config information
-    for line in config_file:
-        data = json.loads(line)
-        if 'Config' in data:
-            for key in data[ 'Config' ]:
-                config.config[ key ] = data[ 'Config' ][ key ]
+    if blocal:
+        # if found, add to, or over ride (some of) the main config information
+        for line in config_file:
+            data = json.loads(line)
+            if 'Config' in data:
+                for key in data[ 'Config' ]:
+                    config.config[ key ] = data[ 'Config' ][ key ]
 
-    config_file.close()
+        config_file.close()
 
-    for path in ('fPath', 'pathToLEDControl'):
+    if 'pathToEDJournals' not in config.config:
+        if 'fPath' in config.config:            # fPath is a legacy key                      
+            config.config[ 'pathToEDJournals' ] = config.config[ 'fPath' ]
+            return
+        config.config[ 'pathToEDJournals' ] = '%HOMEPATH%/Saved Games/Frontier Developments/Elite Dangerous/'
+
+    for path in ('pathToEDJournals', 'pathToLEDControl'):
         set_path( path )
-
-    if TEST:
-        for event in instructions:
-            print( f'Event {event}: {instructions[ event ]}' )
 
 def config_load(file):
     ''' Read configuration file, and store values in memory '''
@@ -783,8 +879,6 @@ def config_load(file):
             for device in config.config[ 'devices' ]:
                 if not 'cmdCount' in config.config[ "devices" ][ device ]:
                     config.config[ "devices" ][ device ][ 'cmdCount' ] = 1
-            if TEST:
-                print( f'config: {config.config}' )
         if not 'Interest' in data:
             continue
         if data[ 'Interest' ] == 0:
@@ -863,7 +957,7 @@ def set_path( path_key ):
     '''
     new_key = f'__{path_key}__'
 
-    if not new_key in config.config:
+    if new_key not in config.config:
         path = ""
         term_list = config.config[ path_key ].split("%")
         for term in term_list:
@@ -901,7 +995,7 @@ def threaded_function(main_window):
 
             set_state_reset( False )
             log_file_list = sorted(
-                glob.glob( f"{config.config['__fPath__']}"
+                glob.glob( f"{config.config['__pathToEDJournals__']}"
                            f"{edlr.LOG_FILE}{state.file_filter}."
                            f"{edlr.LOG_SUFFIX}" ),key=os.path.getmtime)
             if len( log_file_list ):
@@ -946,7 +1040,6 @@ def wait_queue( window, timeout=10 ):
     while window.qsize() and counter > 0:
         time.sleep( sleeper )
         counter -= 1
-
 
 def main():
     ''' Main process '''

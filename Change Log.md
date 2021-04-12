@@ -1,6 +1,20 @@
 # ED Log Reader
 ## Change log
 ## 2021
+### 12 Apr
+Replaced the About window, it is now possible to:
+* copy the program's name and version to your clip-board, 
+* and click to open the issues page in a web-browser.
+
+Revised text that appears in the About window.
+
+
+Replaced fPath with pathToEDJournals in the Configiration file (conf.json).
+
+fPath will still work.
+
+If both fPath and pathToEDJournals are missing, the script will try to use "%HOMEPATH%/Saved Games/Frontier Developments/Elite Dangerous/" (the default path to their journals)
+
 ### 11 Apr
 Removed two print statements
 

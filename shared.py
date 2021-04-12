@@ -32,6 +32,8 @@ import tkinter as tk
 from tkinter import messagebox
 from datetime import datetime
 
+VERSION         =   '0.04.11'               # date based version
+
 def in_args( *args ):
     '''
     Check whether flags are given in the run-time/run-line arguments
@@ -63,8 +65,6 @@ config          = []
 instructions    = {}
 language        = 'en'
 
-VERSION         =   '0.01a'                 # version numbers will probably slip
-
 def expand_commands(jsn_txt):
     '''
     expand commands
@@ -91,7 +91,7 @@ def log( module, function, txt ):
     log_file = open( f'{PROG_NAME}.log', 'a', encoding="utf-8" )
     log_file.write(   f'{datetime.utcnow()} UTC\t'
                         f'{os.path.splitext(module)[ 0 ]} . '
-                        f'{function}\t\t{txt}\n' )
+                        f': {function}\t\t{txt}\n' )
     log_file.flush()
     os.fsync(log_file.fileno())
     log_file.close()
