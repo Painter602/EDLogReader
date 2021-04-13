@@ -28,6 +28,7 @@ except ModuleNotFoundError:
     VERSION     =   f'v0.04.12:{edlr.VERSION}'  # version, date based, for script only releases
 
 PROG_NAME =  edlr.PROG_NAME
+FULL_NAME   = f'{PROG_NAME} v{VERSION}'
 LICENSE = ('License:\n'
            '=======\n'
            + PROG_NAME + ', a script to change the LEDs on '
@@ -135,7 +136,7 @@ class About():
                     label.bind('<Button-1>', partial( webbrowser.open, f'{LINK}'))
                     ttips.Create( label, 'Click to open the link in your browser', bgcol='#fdfdfd' )
                 elif txt == VERSION:
-                    label = tk.Label( self.window, text=f'{PROG_NAME} {VERSION}', justify='right', anchor='e')
+                    label = tk.Label( self.window, text=f'{FULL_NAME}', justify='right', anchor='e')
                     label.pack(fill=tk.X, padx=20, pady=20)
                     font = Font(label, label.cget("font"))
                     font.configure(underline = True)
@@ -163,7 +164,7 @@ class About():
         self.window.destroy()
 
     def copy(self, event):
-        copy2clip( f'{PROG_NAME} {VERSION}')
+        copy2clip( f'{FULL_NAME}')
 
     def show(self):
         self.window.wait_window()
