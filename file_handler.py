@@ -1,4 +1,4 @@
-''' making executables with py2exe we mai have problems with __file__ ''
+''' making executables with py2exe we mai have problems with __file__ '''
 
 import os
 import sys
