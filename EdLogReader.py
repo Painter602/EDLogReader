@@ -21,6 +21,7 @@ import webbrowser
 
 import list_joysticks
 import shared as edlr
+import file_handler
 try:
     import version
     VERSION     = version.VERSION               # version file, use for executable releases
@@ -810,7 +811,7 @@ def manage( line, window=None, file_name='' ):
         data = json.loads(line)
     except json.decoder.JSONDecodeError as error:
         # I get an intermittent error here - need to see the cause
-        edlr.log( f'{os.path.basename(__file__)} v{VERSION}', 'manage', f'{error}\n\t{line}' )
+        edlr.log( f'{module_path(__file__)} v{VERSION}', 'manage', f'{error}\n\t{line}' )
         return
 
     if data[ "event" ] in instructions:
