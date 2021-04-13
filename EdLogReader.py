@@ -48,8 +48,6 @@ LICENSE = ('License:\n'
            '51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.'
            )
 
-VERSION         =   f'v0.04.12:{edlr.VERSION}'       # date based version, numbers will probably slip
-
 LINK    = 'https://github.com/Painter602/EDLogReader/issues'
 
 ABOUT = [   ' ',
