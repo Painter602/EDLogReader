@@ -32,7 +32,9 @@ import tkinter as tk
 from tkinter import messagebox
 from datetime import datetime
 
-VERSION         =   '0.04.11'               # date based version
+import file_handler
+
+VERSION         =   '0.04.13'               # date based version
 
 def in_args( *args ):
     '''
@@ -174,7 +176,7 @@ def translate( txt, lang=language ):
     # and record it in the log (without duplication - at least, for this run)
     if not txt in translate.missing[ lang ]:
         translate.missing[ lang ].append( txt )
-        log( f'{os.path.basename(__file__)} v{VERSION}',
+        log( f'{file_handler.module_name(__file__)} v{VERSION}',
              'translate',
              f'translation missing ({lang}): {txt}' )
 
@@ -189,7 +191,7 @@ translate.languages = load_languages()
 def unused():
     ''' list unused translations '''
     for not_used in translate.unused:
-        log( f'{os.path.basename(__file__)} v{VERSION}', 'unused', f'{translate.unused[not_used]}' )
+        log( f'{file_handler.module_name(__file__)} v{VERSION}', 'unused', f'{translate.unused[not_used]}' )
 
 if __name__ == '__main__':
     main()
