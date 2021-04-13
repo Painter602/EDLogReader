@@ -21,6 +21,11 @@ import webbrowser
 
 import list_joysticks
 import shared as edlr
+try:
+    import version
+    VERSION     = version.VERSION               # version file, use for executable releases
+except ModuleNotFoundError:
+    VERSION     =   f'v0.04.12:{edlr.VERSION}'  # version, date based, for script only releases
 
 PROG_NAME =  edlr.PROG_NAME
 LICENSE = ('License:\n'
