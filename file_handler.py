@@ -20,5 +20,5 @@ def module_path( file ):   # use __file__ from the calling module
     """ This will get us the program's directory,
     even if we are frozen using py2exe"""
     if we_are_frozen():
-        return os.path.dirname(unicode(sys.executable, sys.getfilesystemencoding( )))
-    return os.path.dirname(unicode(__file__, sys.getfilesystemencoding( )))
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(file)
