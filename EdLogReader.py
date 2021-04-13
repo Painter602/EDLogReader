@@ -26,7 +26,7 @@ try:
     import version
     VERSION     = version.VERSION               # version file, use for executable releases
 except ModuleNotFoundError:
-    VERSION     =   f'v0.04.12:{edlr.VERSION}'  # version, date based, for script only releases
+    VERSION     =   f'v0.04.13:{edlr.VERSION}'  # version, date based, for script only releases
 
 PROG_NAME =  edlr.PROG_NAME
 FULL_NAME   = f'{PROG_NAME} v{VERSION}'

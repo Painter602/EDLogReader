@@ -1,6 +1,9 @@
 # ED Log Reader
 ## Change log
 ## 2021
+### 13 Apr
+Changes associated with making the scripts compilable with py2exe
+
 ### 12 Apr
 Replaced the About window, it is now possible to:
 * copy the program's name and version to your clip-board, 
