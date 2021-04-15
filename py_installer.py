@@ -8,6 +8,8 @@ import set_env
 import shutil
 import sys
 
+import version
+
 def docopy(src, dest):
     for file_name in glob.glob( src ):
         file_name = ''.join( '/'.join( file_name.split( '\\' ) ).split( './') )
@@ -16,8 +18,8 @@ def docopy(src, dest):
 def paths():
     ''' set distribution path based on executable size (32 bit/ 64 bit) '''
     if sys.maxsize > 2**32:
-        return ('./build64', '../64bit')
-    return ('./build32', '../32bit')
+        return ('./build64', '../64bit', '64 bit')
+    return ('./build32', '../32bit', '32 bit')
 
 def install(spec, distpath='./dist'):
     ''' now build the executable '''
@@ -47,7 +49,7 @@ def set_environment():
 def main(project='EdLogReader'):
     ''' main process '''
     set_environment()
-    (my_build_path, my_dist_path) = paths()
+    (my_build_path, my_dist_path, build_type) = paths()
     project_path = f'{my_dist_path}/{project}'
 
     print( 'Removing old folders' )
@@ -72,8 +74,8 @@ def main(project='EdLogReader'):
     except FileNotFoundError:
         pass    # we don't care why not
 
-    print( 'Zipping new executable' )
-    shutil.make_archive(f'{project_path}', 'zip', f'{project_path}')
+    print( f'Zipping new executable to {project_path}{build_type}' )
+    shutil.make_archive(f'{project_path} v{version.VERSION} ({build_type})', 'zip', f'{project_path}')
     
     print( 'Moving local build folder' )
     shutil.move('./build', my_build_path)
