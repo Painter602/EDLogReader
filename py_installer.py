@@ -1,4 +1,8 @@
-''' Install EdLogreader '''
+''' Install EdLogReader
+    Used to compile the script from within Python
+    The primary benifit is one script can compile many versions of the
+    language (assuming they are compatible)
+'''
 
 import glob
 import os
@@ -18,8 +22,8 @@ def docopy(src, dest):
 def paths():
     ''' set distribution path based on executable size (32 bit/ 64 bit) '''
     if sys.maxsize > 2**32:
-        return ('./build64', '../64bit', '64 bit')
-    return ('./build32', '../32bit', '32 bit')
+        return ('./build64', '../64bit', '64bit')
+    return ('./build32', '../32bit', '32bit')
 
 def install(spec, distpath='./dist'):
     ''' now build the executable '''
@@ -75,7 +79,7 @@ def main(project='EdLogReader'):
         pass    # we don't care why not
 
     print( f'Zipping new executable to {project_path}{build_type}' )
-    shutil.make_archive(f'{project_path} v{version.VERSION} ({build_type})', 'zip', f'{project_path}')
+    shutil.make_archive(f'{project_path}_v{version.VERSION}_{build_type}', 'zip', f'{project_path}')
     
     print( 'Moving local build folder' )
     shutil.move('./build', my_build_path)
