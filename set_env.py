@@ -1,4 +1,9 @@
-''' A script to reset environment variables based on the run-time executable '''
+''' A script to reset environment variables based on the run-time executable
+
+    When compiling for different versions of Python, this is used to reset
+    Windows PATH, to (try and) avoid picking up the wrong module versions
+
+'''
 
 import os
 import re
@@ -39,7 +44,6 @@ def set_env( target ):
 
     os.environ[ 'PATH' ] = ';'.join( path_list )
     return os.environ[ 'PATH' ]
-
 
 if __name__ == '__main__':
     print( os.environ[ 'PATH' ] )
