@@ -9,7 +9,7 @@
     Released by rdb under the Unlicense (unlicense.org)
     Further reading about the WinMM Joystick API:
     http://msdn.microsoft.com/en-us/library/windows/desktop/dd757116(v=vs.85).aspx
-    Adapted by Painte4r602
+    Adapted by Painter602
 
 """
 

@@ -24,17 +24,27 @@ Licence:
 
 """
 
+from datetime import datetime
 import glob
 import json
 import os
+from functools import partial
+import re
 import sys
 import tkinter as tk
 from tkinter import messagebox
-from datetime import datetime
+from tkinter.font import Font
+import subprocess
+import webbrowser
 
 import file_handler
+import ttips
 
-VERSION         =   '0.04.13'               # date based version
+try:
+    import version
+    VERSION     = version.VERSION   # version file, use for executable releases
+except ModuleNotFoundError:
+    VERSION     = '0.04.13'         # version, date based, for script only releases
 
 def in_args( *args ):
     '''
@@ -57,6 +67,7 @@ CONFIG_FILE     = "conf.json"
 DEFAULT_COMMAND = 1                             # default command
 LANG_FILE       = "lang.$.json"
 LANG_FILE_NAME  = LANG_FILE.replace("$", "*")
+LINK    = 'https://github.com/Painter602/EDLogReader/issues'
 LOG_FILE        = "Journal"
 LOG_FILTER      = ['*', '', 'Alpha', 'Beta', 'Gamma' ]    # Gamma release very rare/never used?
 LOG_SUFFIX      = "*.log"
@@ -66,6 +77,81 @@ SHOW_HELP       =  'help' in (x.lower() for x in sys.argv) or '/h' in (x.lower()
 config          = []
 instructions    = {}
 language        = 'en'
+state           = {}
+
+
+class About():
+    def __init__(self, master=None, title='', message=None, program='', *ret):
+        # master=window,
+        # title=f'{PROG_NAME} - {title}',
+        # message=message
+        # super().__init__( )
+        self.window = tk.Toplevel()
+        self.master=master
+        self.ret=False
+        self.window.deiconify()
+        if len( program.strip() ) == 0:
+            program = title.strip()
+        
+        if len(title):
+            self.window.title( title )
+        elif master is not None:
+            self.window.title( master[ 'title' ] )
+
+        label = None
+        if isinstance( message, str ):
+            label = tk.Label( self.window, text=message, justify='left', padx=20, pady=20)
+            label.pack()
+            label.bind('<Double-1>', partial( webbrowser.open, f'{LINK}'))
+        elif isinstance( message, list ):
+            frm = tk.Frame(master=self.window)
+            for txt in message:
+                if txt == LINK:
+                    label = tk.Label( self.window, text=txt, justify='left')
+                    label.pack(fill=tk.X)
+                    font = Font(label, label.cget("font"))
+                    font.configure(underline = True)
+                    label.configure( font=font )
+                    label.bind('<Button-1>', partial( webbrowser.open, f'{LINK}'))
+                    ttips.Create( label, 'Click to open the link in your browser', bgcol='#fdfdfd' )
+                elif txt == VERSION:
+                    label = tk.Label( self.window, text=program, justify='right', anchor='e')
+                    label.pack(fill=tk.X, padx=20, pady=20)
+                    font = Font(label, label.cget("font"))
+                    font.configure(underline = True)
+                    label.configure( font=font )
+                    label.bind('<Button-1>', partial( self.copy ))
+                    ttips.Create( label, 'Click to copy the program\'s name to your clip-board', bgcol='#fdfdfd' )
+                else:
+                    tk.Label( self.window, text=txt, justify='left', anchor='w').pack(fill=tk.X, padx=20, pady=0)
+            frm.pack(padx=20, pady=(20,0))
+            
+        frm_btn = tk.Frame(master=self.window )
+
+        ok_btn = make_button( frm_btn,
+                              "OK",
+                              partial( self.btn_press, False),
+                              tooltip='Close this About window' )
+        # ok_btn[ 'width' ] = len( prog_name )
+        ok_btn.pack(fill=tk.BOTH)
+        frm_btn.pack(pady=( 0, 20 ))
+
+        self.window.grab_set()
+
+    def btn_press( self, value=False ):
+        self.ret = value
+        self.window.destroy()
+
+    def copy(self, event):
+        copy2clip( f'{state[ "full_name" ]}')
+
+    def show(self):
+        self.window.wait_window()
+        return self.ret
+
+def copy2clip(txt):
+    cmd= f'echo {txt.strip()} |clip'
+    subprocess.run( cmd, shell=True )
 
 def expand_commands(jsn_txt):
     '''
@@ -105,16 +191,20 @@ def load_languages():
 
     languages = {}
 
-    lang_file_list = sorted( glob.glob(f"{LANG_FILE_NAME}") )
+    # same folder for lang files used to be in the same folder
+    # now, they can have their own sub-folder
+    lang_file_list = ( glob.glob(f"{LANG_FILE_NAME}") +
+                       glob.glob(f"lang\\{LANG_FILE_NAME}") )
     if len( lang_file_list ) == 0:
         timeout( 'No language files found' )
 
     found_en = False
     for fname in lang_file_list:
-        if fname == 'lang.en.json':
-            found_en = True
+        found_en = re.search("\S*.en.\S*", fname )
+        if found_en:
+            break
     if not found_en:
-        timeout( 'We need file lang.en.json' )
+        timeout( 'We need file lang\\lang.en.json' )
 
     for file_name in lang_file_list:
         if TEST:
@@ -145,6 +235,22 @@ def main():
                     print( f'\t{ cmd } ' )
             else:
                 print( f'\t{xlate}: { languages[ lang ][ xlate ] }' )
+
+def make_button(frm, text, command, side=tk.LEFT, tooltip=''):
+    ''' Make a simple button '''
+    if isinstance(text, tk.StringVar):
+        button = tk.Button(frm,
+                           textvariable=text,
+                           command=command )
+    else:
+        button = tk.Button(frm,
+                           text=f' {text} ',
+                           command=command )
+    button.pack(side=side)
+
+    if len( tooltip ) > 0:
+        ttips.Create( button, tooltip, bgcol='#eeeeee' )
+    return button
 
 def make_string(txt, master=None ):
     ''' Make a string variable '''
@@ -191,7 +297,7 @@ translate.languages = load_languages()
 def unused():
     ''' list unused translations '''
     for not_used in translate.unused:
-        log( f'{file_handler.module_name(__file__)} v{VERSION}', 'unused', f'{translate.unused[not_used]}' )
+        log( f'{file_handler.module_name(__file__)} v {VERSION}', 'unused', f'{translate.unused[not_used]}' )
 
 if __name__ == '__main__':
     main()

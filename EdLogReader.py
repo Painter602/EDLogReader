@@ -15,13 +15,12 @@ import time
 from threading import Thread
 import tkinter as tk
 from tkinter import messagebox
-from tkinter.font import Font
 import ttips
-import webbrowser
 
 import list_joysticks
 import shared as edlr
 import file_handler
+from shared import make_button
 try:
     import version
     VERSION     = version.VERSION               # version file, use for executable releases
@@ -29,7 +28,7 @@ except ModuleNotFoundError:
     VERSION     =   f'v0.04.13:{edlr.VERSION}'  # version, date based, for script only releases
 
 PROG_NAME =  edlr.PROG_NAME
-FULL_NAME   = f'{PROG_NAME} v{VERSION}'
+FULL_NAME   = f'{PROG_NAME} v {VERSION}'
 LICENSE = ('License:\n'
            '=======\n'
            + PROG_NAME + ', a script to change the LEDs on '
@@ -49,8 +48,7 @@ LICENSE = ('License:\n'
            'with this program; if not, write to\nthe Free Software Foundation, Inc., '
            '51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.'
            )
-
-LINK    = 'https://github.com/Painter602/EDLogReader/issues'
+LINK=edlr.LINK
 
 ABOUT = [   ' ',
             (  'About '+ PROG_NAME + '\n\n'
@@ -102,76 +100,7 @@ state.reset         = False
 state.running       = False
 state.skip_test     = False
 state.test_devices  = False
-
-
-class About():
-    def __init__(self, master=None, title='', message=None, *ret):
-        # master=window,
-        # title=f'{PROG_NAME} - {title}',
-        # message=message
-        # super().__init__( )
-        self.window = tk.Toplevel()
-        self.master=master
-        self.ret=False
-        self.window.deiconify()
-        
-        if len(title):
-            self.window.title( title )
-        elif master is not None:
-            self.window.title( master[ 'title' ] )
-
-        label = None
-        if isinstance( message, str ):
-            label = tk.Label( self.window, text=message, justify='left', padx=20, pady=20)
-            label.pack()
-            label.bind('<Double-1>', partial( webbrowser.open, f'{LINK}'))
-        elif isinstance( message, list ):
-            frm = tk.Frame(master=self.window)
-            for txt in message:
-                if txt == LINK:
-                    label = tk.Label( self.window, text=txt, justify='left')
-                    label.pack(fill=tk.X)
-                    font = Font(label, label.cget("font"))
-                    font.configure(underline = True)
-                    label.configure( font=font )
-                    label.bind('<Button-1>', partial( webbrowser.open, f'{LINK}'))
-                    ttips.Create( label, 'Click to open the link in your browser', bgcol='#fdfdfd' )
-                elif txt == VERSION:
-                    label = tk.Label( self.window, text=f'{FULL_NAME}', justify='right', anchor='e')
-                    label.pack(fill=tk.X, padx=20, pady=20)
-                    font = Font(label, label.cget("font"))
-                    font.configure(underline = True)
-                    label.configure( font=font )
-                    label.bind('<Button-1>', partial( self.copy ))
-                    ttips.Create( label, 'Click to copy the program\'s name to your clip-board', bgcol='#fdfdfd' )
-                else:
-                    tk.Label( self.window, text=txt, justify='left', anchor='w').pack(fill=tk.X, padx=20, pady=0)
-            frm.pack(padx=20, pady=(20,0))
-            
-        frm_btn = tk.Frame(master=self.window )
-
-        ok_btn = make_button( frm_btn,
-                              "OK",
-                              partial( self.btn_press, False),
-                              tooltip='Close this About window' )
-        # ok_btn[ 'width' ] = len( prog_name )
-        ok_btn.pack(fill=tk.BOTH)
-        frm_btn.pack(pady=( 0, 20 ))
-
-        self.window.grab_set()
-
-    def btn_press( self, value=False ):
-        self.ret = value
-        self.window.destroy()
-
-    def copy(self, event):
-        copy2clip( f'{FULL_NAME}')
-
-    def show(self):
-        self.window.wait_window()
-        return self.ret
-        
-    
+edlr.state[ 'full_name' ] = FULL_NAME
 
 ########################################################################
 class Window:
@@ -506,10 +435,6 @@ class Window:
 
 ########################################################################
 
-def copy2clip(txt):
-    cmd= f'echo {txt.strip()} |clip'
-    subprocess.run( cmd, shell=True )
-
 def do_colour( device, cmd=None):
     '''
     set colours for a device
@@ -559,9 +484,9 @@ def help_about( args=None ):
         for message in range( len( txt ) ):
             txt[ message ] = txt[ message ].replace('\r', ' ').replace('\t\\', '\t')
 
-        about = About(  master=window,
+        edlr.About(  master=window,
                         title=f'{PROG_NAME} - {edlr.translate( title )}',
-                        message=txt).show()    
+                        message=txt, program=FULL_NAME).show()    
 
 def help_mssg( args=None):
     ''' Display a message in a mesage box '''
@@ -771,22 +696,6 @@ def get_master( master ):
         master = master.master
     return master
 
-def make_button(frm, text, command, side=tk.LEFT, tooltip=''):
-    ''' Make a simple button '''
-    if isinstance(text, tk.StringVar):
-        button = tk.Button(frm,
-                           textvariable=text,
-                           command=command )
-    else:
-        button = tk.Button(frm,
-                           text=f' {text} ',
-                           command=command )
-    button.pack(side=side)
-
-    if len( tooltip ) > 0:
-        ttips.Create( button, tooltip, bgcol='#eeeeee' )
-    return button
-
 def make_menu( menu, menulist ):
     ''' make a drop down menu list '''
     master = get_master( menu )
@@ -811,7 +720,7 @@ def manage( line, window=None, file_name='' ):
         data = json.loads(line)
     except json.decoder.JSONDecodeError as error:
         # I get an intermittent error here - need to see the cause
-        edlr.log( f'{module_path(__file__)} v{VERSION}', 'manage', f'{error}\n\t{line}' )
+        edlr.log( f'{file_handler.module_name(__file__)} v {VERSION}', 'manage', f'{error}\n\t{line}' )
         return
 
     if data[ "event" ] in instructions:
