@@ -56,7 +56,7 @@ def set_env( target ):
     return os.environ[ 'PATH' ]
 
 if __name__ == '__main__':
-    set_env( 'C:\Python\Pyton38-64bit\\' )
+    set_env( 'python' )
     # set_env( 'some_python_folder\\' )   # ideally, one of PATH_TO_38_32,
                                         # PATH_TO_39_32, PATH_TO_39_64
     print( f'PATH = {os.environ[ "PATH" ]}' )

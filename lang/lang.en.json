@@ -48,9 +48,9 @@
 	"timedeltaMs": "(time, ms)",
 	"timeOut": "",
 	"commands": [
-		["[00] Set Default"],
-		["[{d}] Set Add-boards LED {e}", 1, 4],
-		["[{d}] Set On-board LED {e}", 5, 24],
-		["[{d}] Set Slave-board LED {e}", 25, 44]
+		["[{d}] Set Default", 0, 0],
+		["[{d}] Set Add-boards LED #{e}", 1, 4, "Use value 1 for Alpha Joysticks"],
+		["[{d}] Set On-board LED #{e}", 5, 24],
+		["[{d}] Set Slave-board LED #{e}", 25, 44]
 		]		
 }

@@ -1,11 +1,13 @@
 '''
 Draft script
 '''
+import sys
 import tkinter as tk
 from tkinter import ttk
 
 import list_joysticks
 import shared
+import ttips
 
 try:
     import version
@@ -61,11 +63,12 @@ HELP = ( PROG_NAME + ' Help\n'
 
 class MainWindow():
     ''' Well, that's what it is '''
-    def __init__(self):
-        self.window = tk.Tk()
+    def __init__(self, master=None):
+        self.window = tk.Toplevel(master=master)
         self.window.title(PROG_NAME)
         self.make_menus()
         self.make_tabs()
+        self.window.mainloop()
 
     def joysticks( self, master ):
 
@@ -76,54 +79,40 @@ class MainWindow():
         for option in (
             shared.translate.languages[ shared.language ][ 'commands' ] ):
             js_list.append( option )
-        
-        lbl_width = 0
-        for js in static.joysticks:
-            lbl_width = max( lbl_width, len( js ) )
 
         
         frame = tk.Frame( master )
-        tk.Label(   frame, text='Device',
-                    width=lbl_width, anchor='e' ).pack(
-                        side=tk.LEFT)
-        tk.Label( frame, text='VID', width=4 ).pack( side=tk.LEFT) 
-        tk.Label( frame, text='PID', width=4 ).pack( side=tk.LEFT)
-        tk.Label( frame, text='Is LED\nDevice', width=6 ).pack( side=tk.LEFT)
-        tk.Label( frame, text='JS', width=4 ).pack( side=tk.LEFT)
-        tk.Label( frame, text='Master', width=6 ).pack( side=tk.LEFT)
-        tk.Label( frame, text='Slave', width=6 ).pack( side=tk.LEFT)
-        frame.pack(expand=True, fill=tk.X)
-        
+        tk.Label( frame, text='Device', ).grid( row=0, column=0, sticky=tk.W)
+        tk.Label( frame, text='VID', width=4 ).grid( row=0, column=1, sticky=tk.W )
+        tk.Label( frame, text='PID', width=4 ).grid( row=0, column=2, sticky=tk.W )
+        column=2
+        for key in shared.translate.languages[ shared.language ][ 'range' ]:
+            (base, size) = shared.translate.languages[ shared.language ][ 'range' ][ key ]
+            if size > 1:
+                column += 1
+                tk.Label( frame, text=key ).grid( row=0, column=column, padx=2 )
+        row = 0
         for js in static.joysticks:
-            frame = tk.Frame( master )
-            tk.Label( frame, text=js, width=lbl_width, anchor='e' ).pack(
-                side=tk.LEFT)
-            tk.Label( frame, text=static.joysticks[ js ][ 'vid' ] ).pack(
-                side=tk.LEFT)
-            tk.Label( frame, text=static.joysticks[ js ][ 'pid' ] ).pack(
-                side=tk.LEFT)
-            if isinstance( static.joysticks[ js ][ 'led_device' ], bool ):
-                static.joysticks[ js ][ 'led_device' ] = tk.BooleanVar(
-                    master=self.window,
-                    value=static.joysticks[ js ][ 'led_device' ] )
-            tk.Checkbutton( frame,
-                         variable=static.joysticks[ js ][ 'led_device' ],
-                            text='',
-                            width=6, anchor='c'
-                         ).pack(side=tk.LEFT)
-            menubutton = tk.Menubutton( frame, text='Ranges' )
-            menu = tk.Menu( menubutton, tearoff=False )
-            menubutton.configure( menu=menu )
-            menubutton.pack()
-            for choice in js_list:
-                static.joysticks[ js ][ 'range' ][ choice ] = (
-                    tk.IntVar( value=-1 ) )
-                menu.add_checkbutton(
-                    label=choice,
-                    variable=static.joysticks[ js ][ 'range' ][ choice ],
-                    onvalue=int(choice[1:2]), offvalue=-1 )
-            
-            frame.pack(expand=True, fill=tk.X)
+            row += 1
+            tk.Label( frame, text=js, anchor='e' ).grid( row=row, column=0, sticky=tk.W )
+            tk.Label( frame, text=static.joysticks[ js ][ 'vid' ] ).grid( row=row, column=1, sticky=tk.W )
+            tk.Label( frame, text=static.joysticks[ js ][ 'pid' ] ).grid( row=row, column=2, sticky=tk.W )
+
+            column= 2
+            for key in shared.translate.languages[ shared.language ][ 'range' ]:
+                (base, size) = shared.translate.languages[ shared.language ][ 'range' ][ key ]
+                if size > 1:
+                    column += 1
+                    int_val = tk.IntVar(master=self.window, value=0, name=f'{js}_{key}')
+                    int_entry = tk.Spinbox(frame, width=4, textvariable=int_val, from_=0, to=size)
+                    int_entry.grid( row=row, column=column )
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_rowconfigure(0, weight=1)
+        #self.contentframe.grid_columnconfigure(0, weight=1)
+        #self.contentframe.grid_rowconfigure(0, weight=1)
+        #self.topBar.grid_columnconfigure(0, weight=1)
+        #self.topBar.grid_rowconfigure(0, weight=1)
+        frame.pack(padx=20, pady=(10,20))
 
     def make_menus(self):
         pass
@@ -152,30 +141,25 @@ def load_config():
 
 def load_joysticks():
     joysticks = list_joysticks.list_joy_sticks()
-    for js in static.joysticks:
-        static.joysticks[ js[ 'oem_name' ] ][ 'visible' ] = (
-            set_value(
-                static.joysticks[ js[ 'oem_name' ] ][ 'visible' ],
-                False )
-            )
-    for js in joysticks:
+    sorted_js = sorted(joysticks, key=lambda kv: f"{kv['oem_name']} {kv['joy_id']}")
+    static.joysticks = {}
+    for js in sorted_js:
         refresh_joystick( js )
 
 def refresh_joystick( js ):
-    if js[ 'oem_name' ] in static.joysticks:
-        static.joysticks[ js[ 'oem_name' ] ][ 'connected' ] = (
-            set_value(
-                static.joysticks[ js[ 'oem_name' ] ][ 'connected' ],
-                True )
-            )
-    else:
-        static.joysticks[ js[ 'oem_name' ] ] = {
-            'vid'           : js[ 'vid' ],
-            'pid'           : js[ 'pid' ],
-            'led_device'    : False,
-            'range'         : {},
-            'connected'     : True
-            }
+    n = 0
+    jnm = js[ 'oem_name' ]
+    while jnm in static.joysticks:
+        n+=1
+        jnm = f'{js[ "oem_name" ]} ({n})'
+    js[ 'oem_name' ] = jnm
+
+    static.joysticks[ js[ 'oem_name' ] ] = {
+        'vid'           : js[ 'vid' ],
+        'pid'           : js[ 'pid' ],
+        'range'         : {'board': -1, 'master': -1, 'slave': -1},
+        'connected'     : True
+        }
     
 def set_value( field, value ):
     if isinstance(field, tk.Variable ):

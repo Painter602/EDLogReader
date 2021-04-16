@@ -159,10 +159,15 @@ def expand_commands(jsn_txt):
     '''
     places          = 2
     commands= []
+    command_range = {}
     for line in jsn_txt[ 'commands' ]:
         if len( line ) == 1:
             commands.append( line[ 0 ] )
         else:
+            cr_key = line[ 0 ].replace( '[{d}]', '')
+            cr_key = cr_key.replace('#{e}', '').replace('{e}', '')
+            command_range[ cr_key.strip() ] = (  line[ 1 ], line[ 2 ]-line[ 1 ]+1 )
+
             e_num = 0
             for d_num in range( line[ 1 ], line[ 2 ]+1 ):
                 e_num += 1
@@ -172,7 +177,8 @@ def expand_commands(jsn_txt):
     if TEST:
         for cmd in commands:
             print(cmd)
-    return commands
+
+    return (commands, command_range)
 
 def log( module, function, txt ):
     ''' Write errors to a log file, to help track them '''
@@ -217,7 +223,8 @@ def load_languages():
         txt = lang_file.read().replace('\n', '')
         lang_file.close()
         jsn_txt = json.loads( txt )
-        jsn_txt[ 'commands' ] = expand_commands( jsn_txt )
+        (   jsn_txt[ 'commands' ],
+            jsn_txt[ 'range' ]) = expand_commands( jsn_txt )
         languages[ jsn_txt[ 'code' ]] = jsn_txt
     return languages
 
@@ -229,12 +236,18 @@ def main():
     for lang in languages:
         print( f'{lang}:' )
         for xlate in languages[ lang ]:
-            if xlate == 'commands':
+            if xlate in ( 'commands', 'range' ):
                 print()
                 for cmd in languages[ lang ][ xlate ]:
-                    print( f'\t{ cmd } ' )
+                    print( f'\t{xlate} - { cmd } ' )
+            elif xlate in ( 'range' ):
+                print()
+                for cmd in languages[ lang ][ xlate ]:
+                    print( f'\t{xlate} - { cmd }: {languages[ lang ][ xlate ][ cmd ]} ' )
             else:
                 print( f'\t{xlate}: { languages[ lang ][ xlate ] }' )
+    if lang == 'en':
+        sys.exit( 0 )
 
 def make_button(frm, text, command, side=tk.LEFT, tooltip=''):
     ''' Make a simple button '''

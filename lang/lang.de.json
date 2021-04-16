@@ -25,10 +25,9 @@
 	"timeOut": "",
 	"timedeltaMs": "(Zeit, ms)",
 	"commands": [
-		["[00] LED deaktiviert"],
-		["[{d}][ALPHA] VPC Constellation ALPHA Griff"],
-		["[{d}]nicht verwendet #{e}", 2, 4],
-		["[{d}] am Bord #{e}", 1, 20],
-		["[{d}] Sklave #{e}", 1, 20]
+		["[{d}] LED deaktiviert", 0, 0],
+		["[{d}]nicht verwendet #{e}", 1, 4],
+		["[{d}] am Bord #{e}", 5, 24],
+		["[{d}] Sklave #{e}", 25, 44]
 		]		
 }
