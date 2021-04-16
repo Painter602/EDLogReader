@@ -15,7 +15,7 @@ In principal, this could be adapted to other JSON based log files.
     2. Alternativly - To use the source scripts, check the notes for running scripts.
 
 ## Why not distribute an executable version?
-I do now.
+Thee is one now.
 
 ## After uploading
 There are three configuration files:
