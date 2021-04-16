@@ -1,10 +1,21 @@
 # ED Log Reader
 ## Change log
 ## 2021
+## Version 0.1.0
+### 16 Apr
+Updated readme to reflect move to executables
+
+### 15 Apr
+Changed compiler, now using pyinstaller, that allows for both 64-bit and 32-bit installation.
+
+New scripts written to support the new compiler.
+
+Released new compiled versions.
+## Version 0.0.1 (and 0.0.1a)
 ### 13 Apr
 Changes associated with making the scripts compilable with py2exe
-
-### 12 Apr
+## Scripted versions
+#### 12 Apr
 Replaced the About window, it is now possible to:
 * copy the program's name and version to your clip-board, 
 * and click to open the issues page in a web-browser.
@@ -18,10 +29,10 @@ fPath will still work.
 
 If both fPath and pathToEDJournals are missing, the script will try to use "%HOMEPATH%/Saved Games/Frontier Developments/Elite Dangerous/" (the default path to their journals)
 
-### 11 Apr
+#### 11 Apr
 Removed two print statements
 
-### 10 Apr 2021
+#### 10 Apr 2021
 Added ability to scroll output text widget.  The widget is limited to 500 lines.
 
 Added a pause button.  Pausing the feed changes to colour of the output text widget as a clue to the chjanged state.
@@ -30,14 +41,14 @@ Bug fixes
 
 To-do: switching to (or from) the display devices mode is slow.
 
-#### 0.02
+##### 0.02
 Small change to the way config files are loaded
 
-### 9 Apr 2021
+#### 9 Apr 2021
 Rearranged buttons, and added tool-tips.
 Lots of bugs chased down and removed.
 
-### 8 Apr 2021
+#### 8 Apr 2021
 Revised calls to the main window so that the script is more responsive.
 Moved most buttons into menu options, removing the buttons.
 Removed 'Skip Device Testing' button, replacing it with a run-time test.
@@ -47,7 +58,7 @@ Started preparations for multi-language support.
 
 Extended the range of commands in the English language translations file.
 
-###  7 Apr 2021
+####  7 Apr 2021
 Change to the way the script works.
 It now holds a window open while checking the ED log files.
 
@@ -60,12 +71,12 @@ Created this Change log
 
 ## Historical changes (pre-dating this log)
 
-###  6 Apr 2021
+####  6 Apr 2021
 Fixed an issue where EdLogReader checks the attached devices match the config file.
 The script should now show better feedback if a device in config is not attached to the PC.
 
 
-###  5 Apr 2021
+####  5 Apr 2021
 Added licence information to this file, and to start of shared.py and EdLogReader.py
 
 Updated EdLogReader.py to set several buttons on the same device simultaneously in response to in game events.
