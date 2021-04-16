@@ -4,27 +4,35 @@ Script to read Elite Dangerous Logs (journals) and to change the LEDs on Virpil 
 In principal, this could be adapted to other JSON based log files.
 
 ## Required:
-1) Elite Dangerous game
+1. Elite Dangerous game
 
-2) One or more Virpil devices
+2. One or more Virpil devices
 
-3) Virpil's VPC_LED_Control.exe program.  This is bundled with their VPC Software Setup files, download from: https://support.virpil.com/en/support/solutions/47000010107
+3. Virpil's VPC_LED_Control.exe program.  This is bundled with their VPC Software Setup files, download from: https://support.virpil.com/en/support/solutions/47000010107
 
-4) A Python runtime environment, or Python compiler.  The Python environment can be downloaded from https://www.python.org/downloads/
-
-   The script was written for Python 3.9.
-
-   It will not work with versions 2.x or earlier.
-
-## Nice to have:
-The script can run from the command line or from Python's IDLE.
-
-I built an executable from my copy using a Python compiler.
-
-There are several Python compilers out there.  I used py2exe, but suggest you research available options, and select the one best suited to you.
+4. Either:
+    ### 1. Easiest option
+    Download one of the release files (.zip files).
+    ### 2. Alternativly
+    Or, use the source scripts in a Python runtime environment, or Python compiler.  The Python environment can be downloaded from https://www.python.org/downloads/
 
 ## Why not distribute an executable version?
-Simple answer, I do not have a Microsoft compiler with the necessary licences to do so.
+I do now.
+The executable relies on a Microsoft .dll ( VCRUNTIME140.dll) that most of us have anyway.
+
+If for some reason you dont have the .dll, get it from Microsoft, here: https://visualstudio.microsoft.com/downloads/
+Scroll down and open Other Tools, Frameworks and Redistributables
+Look for Microsoft Visual C++ Redistributable for Visual Studio 2019
+Select the option that suits your PC, and click download.
+
+If you prefer to use the source files
+- The script was written in Python 3.9 and has been tested with Python 3.8,
+  #### Nice to have:
+  The script can run from the command line or from Python's IDLE.
+  
+  I built an executable from my copy using a Python compiler.
+  
+  There are several Python compilers out there. Pyinstaller seems to work well, but I suggest you research available options, and select the one best suited to you.
 
 ## After uploading
 There are three configuration files:
@@ -64,4 +72,4 @@ Elite Dangerous is a trade mark of Frontier Developments plc, 26 Science Park, M
 Virpil is a trade mark of  TERRAZYT PLUS LTD, Gorkogo St., 91-1, Grodno, 230005, Belarus 
 
 ## Thank-you
-Thank-you to Fixitman for finding the commands for the CM3 throttle and for testing
+Thank-you to Fixitman for finding the commands for the CM3 throttle and for testing.
