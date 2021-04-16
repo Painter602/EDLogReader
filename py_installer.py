@@ -19,11 +19,12 @@ def docopy(src, dest):
         file_name = ''.join( '/'.join( file_name.split( '\\' ) ).split( './') )
         shutil.copy( file_name, f'{dest}/{file_name}' )
 
-def paths():
+def paths(py_local):
     ''' set distribution path based on executable size (32 bit/ 64 bit) '''
+    bit = 32
     if sys.maxsize > 2**32:
-        return ('./build64', '../64bit', '64bit')
-    return ('./build32', '../32bit', '32bit')
+        bit = 64
+    return (f'./build_{py_local}', f'../{py_local}_{bit}bit', f'{bit}bit')
 
 def install(spec, distpath='./dist'):
     ''' now build the executable '''
@@ -46,14 +47,16 @@ def set_environment():
     ''' make sure the run-time environmenmt is consistent '''
     exPath = sys.executable.split('\\')
     exPath[ -1 ] = ''               # don't just pop it here!
+    py_local = exPath[ -2 ]
+    
     exPath = '\\'.join( exPath )
-
     set_env.set_env(exPath)
+    return py_local
 
 def main(project='EdLogReader'):
     ''' main process '''
-    set_environment()
-    (my_build_path, my_dist_path, build_type) = paths()
+    py_local = set_environment()
+    (my_build_path, my_dist_path, build_type) = paths(py_local)
     project_path = f'{my_dist_path}/{project}'
 
     print( 'Removing old folders' )
@@ -78,8 +81,19 @@ def main(project='EdLogReader'):
     except FileNotFoundError:
         pass    # we don't care why not
 
-    print( f'Zipping new executable to {project_path}{build_type}' )
-    shutil.make_archive(f'{project_path}_v{version.VERSION}_{build_type}', 'zip', f'{project_path}')
+    print( f'Path for zip file: {my_dist_path}/../zip' )
+    try:
+        os.makedirs( f'{my_dist_path}/../zip' )
+    except FileExistsError:
+        pass
+
+    print( 'Removing old zip file' )
+    try:
+        os.remove( f'{my_dist_path}/../zip/{project}_v{version.VERSION}_{build_type}.zip' )
+    except FileNotFoundError:
+        pass    # we don't care why not
+    print( 'Zipping project' )
+    shutil.make_archive(f'{my_dist_path}/../zip/{project}_v{version.VERSION}_{build_type}', 'zip', f'{project_path}')
     
     print( 'Moving local build folder' )
     shutil.move('./build', my_build_path)

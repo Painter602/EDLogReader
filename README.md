@@ -11,11 +11,28 @@ In principal, this could be adapted to other JSON based log files.
 3. Virpil's VPC_LED_Control.exe program.  This is bundled with their VPC Software Setup files, download from: https://support.virpil.com/en/support/solutions/47000010107
 
 4. Either:
-    1. Easiest option - Download one of the release files (.zip files).
-    2. Alternativly - To use the source scripts, check the notes for running scripts.
+    ### 1. Easiest option
+    Download one of the release files (.zip files).
+    ### 2. Alternativly
+    Or, use the source scripts in a Python runtime environment, or Python compiler.  The Python environment can be downloaded from https://www.python.org/downloads/
 
 ## Why not distribute an executable version?
-Thee is one now.
+I do now.
+The executable relies on a Microsoft .dll ( VCRUNTIME140.dll) that most of us have anyway.
+
+If for some reason you dont have the .dll, get it from Microsoft, here: https://visualstudio.microsoft.com/downloads/
+Scroll down and open Other Tools, Frameworks and Redistributables
+Look for Microsoft Visual C++ Redistributable for Visual Studio 2019
+Select the option that suits your PC, and click download.
+
+If you prefer to use the source files
+- The script was written in Python 3.9 and has been tested with Python 3.8,
+  #### Nice to have:
+  The script can run from the command line or from Python's IDLE.
+  
+  I built an executable from my copy using a Python compiler.
+  
+  There are several Python compilers out there. Pyinstaller seems to work well, but I suggest you research available options, and select the one best suited to you.
 
 ## After uploading
 There are three configuration files:
@@ -37,15 +54,6 @@ Make sure the device names and id correspond to your devices, check with your VP
 2) The script checks that the device can be found. If not, stop the script, enable the device, and restart the script.
 
 3) If Windows start stacking up on screen, stop the script, then close the windows.  Double check the name and id of your device(s) in configuration.
-4) The executable relies on a Microsoft .dll ( VCRUNTIME140.dll) that I haven't included.  Most of us have this anyway.
- 
-   If for some reason you don't have the .dll, get it from Microsoft, here: https://visualstudio.microsoft.com/downloads/
-   
-   Scroll down and open Other Tools, Frameworks and Redistributables
-   
-   Look for Microsoft Visual C++ Redistributable for Visual Studio 2019
-   
-   Select the option that suits your PC, and click download.
 
 ## How does this relate to Joystick Gremlin or other helper programes?
 I run this script in parallel with Joystick Gremlin (JG, link: https://whitemagic.github.io/JoystickGremlin/ ).
