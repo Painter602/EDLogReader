@@ -12,9 +12,6 @@ In principal, this could be adapted to other JSON based log files.
 
 4. Download one of the current release files (.zip files).
 
-## Why not distribute an executable version?
-I do now.
-
 ## After uploading
 There are three configuration files:
 1) conf.json
