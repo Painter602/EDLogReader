@@ -14,7 +14,7 @@ In principal, this could be adapted to other JSON based log files.
     ### 1. Easiest option
     Download one of the release files (.zip files).
     ### 2. Alternativly
-    To use the source scripts, check these notes: https://github.com/Painter602/EDLogReader/blob/main/Notes%20for%20running%20scripts.md
+    To use the source scripts, check the notes for running scripts.
 
 ## Why not distribute an executable version?
 I do now.
