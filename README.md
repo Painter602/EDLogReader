@@ -11,10 +11,8 @@ In principal, this could be adapted to other JSON based log files.
 3. Virpil's VPC_LED_Control.exe program.  This is bundled with their VPC Software Setup files, download from: https://support.virpil.com/en/support/solutions/47000010107
 
 4. Either:
-    ### 1. Easiest option
-    Download one of the release files (.zip files).
-    ### 2. Alternativly
-    To use the source scripts, check the notes for running scripts.
+    1. Easiest option - Download one of the release files (.zip files).
+    2. Alternativly - To use the source scripts, check the notes for running scripts.
 
 ## Why not distribute an executable version?
 I do now.
