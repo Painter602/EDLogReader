@@ -44,6 +44,7 @@ Make sure the device names and id correspond to your devices, check with your VP
 
 ## How does this relate to Joystick Gremlin or other helper programes?
 ~~I run this script in parallel with Joystick Gremlin (JG, link: https://whitemagic.github.io/JoystickGremlin/ ).~~
+
 I used to run the script in parallel with JoystickGremlin, but I stopped using JG.
 
 JG is not required to run this script.
